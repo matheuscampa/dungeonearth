@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCC RPG — Dashboard de Equipamento</title>
+<style>
+  :root{
+    --bg:#0c0e13; --panel:#15181f; --panel2:#1c212b; --line:#2a313d;
+    --txt:#e7e9ee; --dim:#9aa0a6; --accent:#ff7a18; --accent2:#ffd166;
+    --r-comum:#9aa0a6; --r-incomum:#4caf50; --r-raro:#2f8fff;
+    --r-epico:#b14cff; --r-lendario:#ff9800; --r-celestial:#dfefff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at 50% -10%,#1a1f2b 0,var(--bg) 60%);
+    color:var(--txt);font-family:"Segoe UI",system-ui,Arial,sans-serif;padding:18px 14px 60px}
+  h1,h2,h3{margin:0;font-weight:700;letter-spacing:.3px}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .brand h1{font-size:21px;color:var(--accent2)}
+  .brand small{color:var(--dim);font-size:12px;letter-spacing:.5px}
+  .topbtns{display:flex;gap:8px;flex-wrap:wrap}
+  button{font-family:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);
+    color:var(--txt);padding:8px 12px;border-radius:8px;font-size:13px;transition:.15s}
+  button:hover{border-color:var(--accent);color:#fff}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#1a1206;font-weight:700}
+  button.primary:hover{background:var(--accent2)}
+  button.ghost{background:transparent}
+  button.danger:hover{border-color:#ff5252;color:#ff8a8a}
+  button.sm{padding:5px 9px;font-size:12px}
+
+  /* catálogo bar */
+  .catbar{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .catbar .status{font-size:12px;color:var(--dim)}
+  .catbar .status b{color:var(--accent2)}
+  .catbar input[type=text]{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);
+    color:#fff;border-radius:7px;padding:7px 10px;font-size:12px}
+
+  .grid{display:grid;grid-template-columns:300px 1fr;gap:16px}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:12px}
+
+  .charname input{width:100%;background:var(--panel2);border:1px solid var(--line);color:#fff;
+    font-size:16px;font-weight:700;border-radius:8px;padding:8px 10px;margin-bottom:6px}
+  .lvl{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .lvl label{font-size:12px;color:var(--dim)}
+  .lvl input{width:64px;background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:6px;padding:5px 8px;text-align:center}
+  .attrs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .attr{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center}
+  .attr .sig{font-size:11px;color:var(--dim);letter-spacing:1px}
+  .attr input{width:100%;background:transparent;border:none;color:#fff;font-size:22px;font-weight:800;text-align:center;outline:none}
+  .attr .sqrt{font-size:10px;color:var(--accent2)}
+  .derived{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .stat{background:linear-gradient(180deg,var(--panel2),#171b23);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+  .stat .k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px}
+  .stat .v{font-size:20px;font-weight:800;color:#fff}
+  .stat.def .v{color:var(--accent2)}
+  .stat .sub{font-size:10px;color:var(--dim)}
+
+  .board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:680px){.board{grid-template-columns:repeat(2,1fr)}}
+  .slot-label{grid-column:1/-1;font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);
+    margin:6px 0 -4px;border-bottom:1px dashed var(--line);padding-bottom:5px}
+  .slot{position:relative;min-height:150px;border:2px dashed var(--line);border-radius:12px;
+    background:var(--panel);padding:10px;display:flex;flex-direction:column;cursor:pointer;transition:.15s}
+  .slot:hover{border-color:var(--accent);background:#171b22}
+  .slot.empty{align-items:center;justify-content:center;text-align:center;color:var(--dim)}
+  .slot.empty .ico{font-size:26px;opacity:.5}
+  .slot.empty .nm{font-size:12px;margin-top:6px;letter-spacing:.5px}
+  .slot.empty .hint{font-size:10px;opacity:.6;margin-top:3px}
+  .slot.blocked{opacity:.4;cursor:not-allowed;border-style:solid}
+  .slot.blocked:hover{border-color:var(--line);background:var(--panel)}
+  .slot.filled{border-style:solid;border-width:2px;justify-content:flex-start}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+  .card-name{font-size:13px;font-weight:800;line-height:1.15;margin-top:8px}
+  .card-type{font-size:10px;color:var(--dim);margin-top:3px}
+  .card-stats{font-size:11px;margin-top:7px;line-height:1.5}
+  .card-stats .dmg{color:var(--accent2);font-weight:700}
+  .card-stats .def{color:#7fd1ff;font-weight:700}
+  .card-fx{font-size:10px;color:var(--dim);font-style:italic;margin-top:6px;border-top:1px solid var(--line);padding-top:5px}
+  .rar-chip{font-size:9px;padding:2px 6px;border-radius:20px;white-space:nowrap;font-weight:700;letter-spacing:.5px;color:#0b0d12}
+  .slot-mini{position:absolute;top:6px;left:10px;font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+  .twohand-tag{position:absolute;bottom:6px;right:10px;font-size:9px;color:var(--accent);letter-spacing:.5px}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-start;justify-content:center;
+    padding:30px 14px;z-index:50;overflow:auto}
+  .overlay.show{display:flex}
+  .modal{width:100%;max-width:560px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .modal h3{font-size:16px;margin-bottom:4px;color:var(--accent2)}
+  .modal .subt{font-size:11px;color:var(--dim);margin-bottom:14px}
+  .picker-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:46vh;overflow:auto;padding-right:4px}
+  @media(max-width:520px){.picker-list{grid-template-columns:1fr}}
+  .pk{border:2px solid var(--line);border-radius:10px;padding:9px;cursor:pointer;background:var(--panel2);transition:.12s}
+  .pk:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .pk .pn{font-size:12px;font-weight:700;line-height:1.2}
+  .pk .pt{font-size:9px;color:var(--dim);margin-top:2px}
+  .pk .ps{font-size:10px;margin-top:5px}
+  .pk .ps .dmg{color:var(--accent2)} .pk .ps .def{color:#7fd1ff}
+  .pk .pf{font-size:9px;color:var(--dim);font-style:italic;margin-top:4px}
+  .pk-empty{grid-column:1/-1;color:var(--dim);font-size:12px;text-align:center;padding:18px}
+
+  .fld{margin-bottom:11px}
+  .fld label{display:block;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+  .fld input,.fld select,.fld textarea{width:100%;background:var(--panel2);border:1px solid var(--line);
+    color:#fff;border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit}
+  .fld textarea{resize:vertical;min-height:48px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:12px}
+  .chk input{width:auto}
+  .modal-actions{display:flex;justify-content:space-between;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .help{font-size:10px;color:var(--dim);margin-top:3px}
+  .sys-note{background:#11141a;border-left:3px solid var(--accent);padding:8px 10px;border-radius:6px;
+    font-size:11px;color:var(--dim);margin-bottom:14px;font-style:italic}
+
+  /* inventário */
+  .invlist{display:flex;flex-direction:column;gap:8px}
+  .inv-empty{color:var(--dim);font-size:12px;font-style:italic;padding:12px;text-align:center}
+  .inv{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--line);
+    border-left-width:4px;border-radius:9px;padding:9px 12px}
+  .inv .meta{flex:1;min-width:0}
+  .inv .nm{font-size:13px;font-weight:700}
+  .inv .tp{font-size:10px;color:var(--dim);margin-top:1px}
+  .inv .st{font-size:11px;margin-top:3px}
+  .inv .st .dmg{color:var(--accent2);font-weight:700} .inv .st .def{color:#7fd1ff;font-weight:700}
+  .inv .fx{font-size:10px;color:var(--dim);font-style:italic;margin-top:2px}
+  .inv .acts{display:flex;gap:6px;flex-shrink:0}
+  .inv .rar-chip{font-size:9px;padding:2px 6px;border-radius:20px;font-weight:700;letter-spacing:.5px;color:#0b0d12}
+  .inv .qty{display:flex;align-items:center;gap:4px;margin-right:4px}
+  .inv .qty button{padding:2px 7px;font-size:13px;line-height:1}
+  .inv .qty .q{min-width:26px;text-align:center;font-weight:800;font-size:13px}
+
+  /* recursos: ouro + caixas */
+  .resources{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+  .gold{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:10px 14px}
+  .gold .gico{font-size:24px}
+  .gold .rk{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px}
+  .gold input{width:110px;background:transparent;border:none;color:var(--accent2);font-size:22px;font-weight:800;outline:none}
+  .boxes{display:flex;gap:10px;flex-wrap:wrap;flex:1}
+  .box{background:var(--panel2);border:1px solid var(--line);border-top:3px solid var(--bc);border-radius:10px;
+    padding:8px 10px;text-align:center;min-width:92px}
+  .box .bname{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--bc);font-weight:700;text-shadow:0 0 6px rgba(0,0,0,.4)}
+  .box .bctrl{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:5px}
+  .box .bctrl button{padding:2px 8px;font-size:14px;line-height:1}
+  .box .bcount{font-size:18px;font-weight:800;min-width:24px}
+  .seg{display:flex;gap:6px;margin-bottom:14px}
+  .seg button{flex:1}
+  .seg button.on{background:var(--accent);border-color:var(--accent);color:#1a1206;font-weight:700}
+
+  /* ---------- SKILLS ---------- */
+  :root{
+    --t-FOR:#ff5d5d; --t-DEX:#4caf50; --t-INT:#2f8fff; --t-CHA:#ffcf3f; --t-NEU:#b9c0cc;
+  }
+  .ps-bar{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .ps-box{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+  .ps-box .pico{font-size:22px}
+  .ps-box .rk{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px}
+  .ps-box input{width:60px;background:transparent;border:none;color:var(--accent2);font-size:20px;font-weight:800;outline:none}
+  .ps-box .big{font-size:20px;font-weight:800}
+  .ps-box .big.ok{color:#7be07b} .ps-box .big.over{color:#ff6b6b}
+  .skill-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:760px){.skill-grid{grid-template-columns:1fr}}
+  .skill-empty{color:var(--dim);font-size:12px;font-style:italic;padding:14px;text-align:center}
+  .sk-card{background:var(--panel2);border:1px solid var(--line);border-left-width:4px;border-radius:11px;padding:11px 12px;position:relative}
+  .sk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .sk-name{font-size:14px;font-weight:800;line-height:1.15}
+  .sk-chip{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:800;letter-spacing:.5px;color:#0b0d12;white-space:nowrap}
+  .sk-meta{font-size:10px;color:var(--dim);margin-top:2px}
+  .sk-rankrow{display:flex;align-items:center;gap:8px;margin:8px 0}
+  .sk-rankrow .rlbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
+  .sk-rankrow .rval{font-size:18px;font-weight:800;color:var(--accent2);min-width:54px;text-align:center}
+  .sk-rankrow button{padding:2px 9px;font-size:15px;line-height:1}
+  .sk-next{font-size:10px;color:var(--dim);margin-left:auto;text-align:right}
+  .sk-next b{color:var(--accent2)}
+  .sk-desc{font-size:11px;line-height:1.45;margin-top:4px}
+  .sk-evos{margin-top:7px;border-top:1px solid var(--line);padding-top:6px;display:flex;flex-direction:column;gap:3px}
+  .sk-evo{font-size:10px;line-height:1.35;color:var(--dim);display:flex;gap:5px}
+  .sk-evo .lk{font-weight:800;flex-shrink:0}
+  .sk-evo.on{color:var(--txt)} .sk-evo.on .lk{color:#7be07b}
+  .sk-evo.off .lk{color:var(--dim)}
+  .sk-x{position:absolute;top:8px;right:8px}
+  .pk .pchip{font-size:8px;padding:1px 6px;border-radius:20px;font-weight:800;color:#0b0d12;margin-left:4px}
+  .trackfilter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+  .trackfilter button{font-size:11px;padding:5px 10px}
+  .trackfilter button.on{background:var(--accent);border-color:var(--accent);color:#1a1206;font-weight:700}
+
+  /* Ataque Desarmado */
+  .unarmed-box{margin-top:12px;background:linear-gradient(180deg,#231a14,#181410);border:1px solid #4a3826;border-radius:10px;padding:10px 11px}
+  .unarmed-box .uhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+  .unarmed-box .utitle{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#ff9d5c;font-weight:800}
+  .unarmed-box .ureg{font-size:10px;color:var(--dim)}
+  .unarmed-box .urow{display:flex;gap:8px;margin-top:4px}
+  .unarmed-box .ud{flex:1;text-align:center;background:#0e0c0a;border:1px solid #3a2c1e;border-radius:7px;padding:5px 2px}
+  .unarmed-box .ud .k{font-size:9px;color:var(--dim);text-transform:uppercase}
+  .unarmed-box .ud .v{font-size:17px;font-weight:800;color:#ffcf9a}
+  .unarmed-box .umeta{font-size:10px;color:var(--dim);margin-top:6px;line-height:1.4}
+  .unarmed-box .umeta b{color:#ff9d5c}
+  .atk-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .atk{background:#0e0c0a;border:1px solid #3a2c1e;border-left-width:3px;border-radius:7px;padding:6px 8px}
+  .atk-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+  .atk-name{font-size:11.5px;font-weight:700;color:#ffe9d2;line-height:1.15}
+  .atk-tag{font-size:8.5px;color:var(--dim);white-space:nowrap}
+  .atk-dmg{font-size:10px;color:var(--dim);margin-top:3px}
+  .atk-dmg b{font-size:13px;color:#ffcf9a}
+  .atk-prec{color:var(--accent2);margin-left:6px}
+  .atk-foot{font-size:9.5px;color:var(--dim);margin-top:7px;line-height:1.35}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>⚔ DASHBOARD DE EQUIPAMENTO</h1>
+      <small>Dungeon Crawler Carl — RPG de Mesa · Sistema v1</small>
+    </div>
+    <div class="topbtns">
+      <button class="ghost" onclick="exportChar()">⬇ Exportar ficha</button>
+      <button class="ghost" onclick="document.getElementById('importChar').click()">⬆ Importar ficha</button>
+      <input type="file" id="importChar" accept="application/json" style="display:none" onchange="importChar(event)">
+      <button class="danger ghost" onclick="resetAll()">🗑 Limpar ficha</button>
+    </div>
+  </header>
+
+  <!-- BARRA DO CATÁLOGO COMPARTILHADO -->
+  <div class="catbar">
+    <span class="status" id="catStatus">Catálogo: <b>nenhum carregado</b></span>
+    <input type="text" id="catUrl" placeholder="Cole aqui o link do catálogo (Dropbox/GitHub)…">
+    <button class="sm" onclick="loadCatalogFromUrl()">🔗 Carregar do link</button>
+    <button class="sm ghost" onclick="document.getElementById('catFile').click()">📁 Do arquivo</button>
+    <input type="file" id="catFile" accept="application/json" style="display:none" onchange="loadCatalogFromFile(event)">
+  </div>
+
+  <!-- BARRA DO CATÁLOGO DE SKILLS -->
+  <div class="catbar">
+    <span class="status" id="skillCatStatus">Skills: <b>nenhum catálogo</b></span>
+    <input type="text" id="skillCatUrl" placeholder="Cole o link do catálogo de SKILLS (DCC-Catalogo-Skills.json)…">
+    <button class="sm" onclick="loadSkillCatFromUrl()">🔗 Carregar skills</button>
+    <button class="sm ghost" onclick="document.getElementById('skillCatFile').click()">📁 Do arquivo</button>
+    <input type="file" id="skillCatFile" accept="application/json" style="display:none" onchange="loadSkillCatFromFile(event)">
+  </div>
+
+  <!-- BARRA DE SINCRONIZAÇÃO AO VIVO -->
+  <div class="catbar">
+    <span class="status" id="syncStatus">Sincronização: <b>offline</b></span>
+    <input type="text" id="roomCode" placeholder="Código da mesa (ex: corredor-do-carl)">
+    <button class="sm" onclick="connectCloud()">📡 Conectar mesa</button>
+    <button class="sm ghost" onclick="pullCloud()" title="Recuperar a ficha salva na nuvem (link pessoal)">☁ Puxar ficha</button>
+    <button class="sm ghost" onclick="toggleCfg()">⚙ Configurar Firebase</button>
+  </div>
+  <div class="catbar" id="cfgbar" style="display:none">
+    <textarea id="fbCfg" placeholder="Cole aqui o objeto firebaseConfig do seu projeto…" style="flex:1;min-width:240px;background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:7px;padding:8px;font-size:11px;font-family:monospace;min-height:96px"></textarea>
+    <button class="sm" onclick="saveCfg()">Salvar config</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Crawler</h2>
+      <div class="charname"><input id="charName" placeholder="Nome do personagem" oninput="save()"></div>
+      <div class="lvl"><label>Nível</label><input type="number" id="level" min="1" value="1" oninput="save()"></div>
+      <h2>Atributos</h2>
+      <div class="attrs" id="attrs"></div>
+      <div class="derived" id="derived"></div>
+      <div id="unarmed" class="unarmed-box"></div>
+      <p class="help" id="handHint" style="margin-top:12px"></p>
+    </div>
+
+    <div class="panel">
+      <h2>Equipamento</h2>
+      <div class="sys-note">O Sistema observa seu inventário. Clique num slot para encaixar uma carta do catálogo.</div>
+      <div class="board" id="board"></div>
+    </div>
+  </div>
+
+  <!-- RECURSOS: OURO + CAIXAS -->
+  <div class="panel" style="margin-top:16px">
+    <h2>Recursos</h2>
+    <div class="resources">
+      <div class="gold">
+        <span class="gico">🪙</span>
+        <div><div class="rk">Ouro</div><input id="gold" type="number" min="0" value="0" oninput="saveGold()"></div>
+      </div>
+      <div class="boxes" id="boxes"></div>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <div class="panel" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">Skills &amp; Spells <span id="skillCount" style="color:var(--accent2)"></span></h2>
+      <button class="sm primary" onclick="openSkillPicker()">+ Adicionar skill</button>
+    </div>
+    <div class="ps-bar">
+      <div class="ps-box" style="border-color:#3a5a8f">
+        <span class="pico">🔷</span>
+        <div><div class="rk">PM (Mana)</div>
+          <span style="display:flex;align-items:center;gap:6px">
+            <input id="pmCur" type="number" min="0" value="0" oninput="savePm()" style="color:#7fb0ff;width:46px">
+            <span style="color:var(--dim);font-size:14px">/ <b id="pmMax" style="color:#7fb0ff">0</b></span>
+            <button class="sm ghost" onclick="restorePm()" title="Restaurar PM ao máximo">⟳</button>
+          </span></div>
+      </div>
+      <div class="ps-box">
+        <span class="pico">✨</span>
+        <div><div class="rk">PS totais</div><input id="psTotal" type="number" min="0" value="2" oninput="saveSkills()"></div>
+      </div>
+      <div class="ps-box"><div><div class="rk">PS gastos</div><div class="big" id="psSpent">0</div></div></div>
+      <div class="ps-box"><div><div class="rk">PS restantes</div><div class="big ok" id="psLeft">2</div></div></div>
+      <div class="sys-note" style="flex:1;min-width:180px;margin:0">PM máx = INT×3 (gasto por spells). Ranks 1-5 = 1 PS · 6-10 = 2 · 11-15 = 4. Evoluções em 5/10/15.</div>
+    </div>
+    <div id="skillList" class="skill-grid"></div>
+  </div>
+
+  <!-- INVENTÁRIO -->
+  <div class="panel" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">Inventário <span id="invCount" style="color:var(--accent2)"></span></h2>
+      <button class="sm primary" onclick="openAddItem()">+ Adicionar item</button>
+    </div>
+    <div id="invList" class="invlist"></div>
+  </div>
+</div>
+
+<!-- MODAL: SELETOR + EDITOR -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Slot</h3>
+    <div class="subt" id="modalSub"></div>
+    <div class="seg">
+      <button id="tabCat" class="on" onclick="setTab('cat')">📦 Do catálogo</button>
+      <button id="tabCustom" onclick="setTab('custom')">✏ Carta personalizada</button>
+    </div>
+
+    <!-- ABA CATÁLOGO -->
+    <div id="paneCat">
+      <div class="picker-list" id="pickerList"></div>
+    </div>
+
+    <!-- ABA EDITOR -->
+    <div id="paneCustom" style="display:none">
+      <div class="fld"><label>Nome do item</label><input id="m_name" placeholder="Ex: Pé de Cabra Enferrujado"></div>
+      <div class="row2">
+        <div class="fld"><label>Tipo / Sabor</label><input id="m_type" placeholder="Ex: Arma · Contundente"></div>
+        <div class="fld"><label>Raridade</label>
+          <select id="m_rar">
+            <option value="comum">Comum</option><option value="incomum">Incomum</option>
+            <option value="raro">Raro</option><option value="epico">Épico</option>
+            <option value="lendario">Lendário</option><option value="celestial">Celestial</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2" id="m_invwrap" style="display:none">
+        <div class="fld">
+          <label>Categoria (onde encaixa)</label>
+          <select id="m_cat">
+            <option value="mao">Mão (arma/escudo)</option>
+            <option value="cabeca">Cabeça</option>
+            <option value="camiseta">Camiseta</option>
+            <option value="armadura">Armadura</option>
+            <option value="roupabaixo">Roupa de Baixo</option>
+            <option value="calca">Calça</option>
+            <option value="calcado">Calçado</option>
+            <option value="acessorio">Acessório</option>
+            <option value="consumivel">Consumível</option>
+          </select>
+        </div>
+        <div class="fld"><label>Quantidade</label><input id="m_qty" type="number" min="1" value="1"></div>
+      </div>
+      <div id="weaponFields">
+        <div class="row3">
+          <div class="fld"><label>Dano Baixa</label><input id="m_d1" type="number" placeholder="0"></div>
+          <div class="fld"><label>Dano Média</label><input id="m_d2" type="number" placeholder="0"></div>
+          <div class="fld"><label>Dano Alta</label><input id="m_d3" type="number" placeholder="0"></div>
+        </div>
+        <div class="row2">
+          <div class="fld"><label>Atributo regente</label>
+            <select id="m_attr"><option value="">—</option><option>FOR</option><option>DEX</option><option>INT</option></select>
+          </div>
+          <div class="fld"><label>Bônus Precisão</label><input id="m_prec" type="number" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fld"><label>Bônus Defesa (Armadura/Escudo)</label><input id="m_def" type="number" placeholder="0"></div>
+        <div class="fld" id="twohandWrap" style="display:none">
+          <label>Mãos</label>
+          <label class="chk" style="padding-top:8px"><input type="checkbox" id="m_2h"> Arma de duas mãos</label>
+        </div>
+      </div>
+      <div class="fld"><label>Efeito gravado / texto</label>
+        <textarea id="m_fx" placeholder='Ex: "Crítico: aplica Atordoado."'></textarea></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="danger ghost" id="m_delete" onclick="deleteCard()">Desequipar (→ inventário)</button>
+      <div style="display:flex;gap:8px">
+        <button class="ghost" onclick="closeModal()">Fechar</button>
+        <button class="primary" id="m_save" onclick="saveCard()" style="display:none">Salvar carta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SELETOR DE SKILLS -->
+<div class="overlay" id="skillOverlay">
+  <div class="modal">
+    <h3>Adicionar Skill / Spell</h3>
+    <div class="subt">Escolha uma skill do catálogo. Ela entra no rank 1 (custa 1 PS). Suba o rank no painel.</div>
+    <div class="trackfilter" id="trackFilter"></div>
+    <div class="picker-list" id="skillPickerList"></div>
+    <div class="modal-actions">
+      <span></span>
+      <button class="ghost" onclick="closeSkillModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const SLOTS = [
+  {id:'maoE', grupo:'Mãos',       nome:'Mão Esquerda', ico:'🗡', hand:true, cat:'mao'},
+  {id:'maoD', grupo:'Mãos',       nome:'Mão Direita',  ico:'🛡', hand:true, cat:'mao'},
+  {id:'cabeca',grupo:'Vestuário', nome:'Cabeça',       ico:'⛑', cat:'cabeca'},
+  {id:'camiseta',grupo:'Vestuário',nome:'Camiseta',    ico:'👕', cat:'camiseta'},
+  {id:'armadura',grupo:'Vestuário',nome:'Armadura',    ico:'🦺', cat:'armadura'},
+  {id:'roupabaixo',grupo:'Vestuário',nome:'Roupa de Baixo',ico:'🩲', cat:'roupabaixo'},
+  {id:'calca', grupo:'Vestuário', nome:'Calça',        ico:'👖', cat:'calca'},
+  {id:'calcado',grupo:'Vestuário',nome:'Calçado',      ico:'🥾', cat:'calcado'},
+  {id:'acc1', grupo:'Acessórios', nome:'Acessório 1',  ico:'💍', cat:'acessorio'},
+  {id:'acc2', grupo:'Acessórios', nome:'Acessório 2',  ico:'📿', cat:'acessorio'},
+  {id:'acc3', grupo:'Acessórios', nome:'Acessório 3',  ico:'🧿', cat:'acessorio'},
+  {id:'acc4', grupo:'Acessórios', nome:'Acessório 4',  ico:'🔮', cat:'acessorio'},
+  {id:'acc5', grupo:'Acessórios', nome:'Acessório 5',  ico:'🪬', cat:'acessorio'},
+];
+const RAR = {
+  comum:{cor:'var(--r-comum)',nome:'Comum'}, incomum:{cor:'var(--r-incomum)',nome:'Incomum'},
+  raro:{cor:'var(--r-raro)',nome:'Raro'}, epico:{cor:'var(--r-epico)',nome:'Épico'},
+  lendario:{cor:'var(--r-lendario)',nome:'Lendário'}, celestial:{cor:'var(--r-celestial)',nome:'Celestial'}
+};
+const ATTRS = [['FOR','Força'],['DEX','Destreza'],['CON','Constituição'],['INT','Inteligência'],['CHA','Carisma']];
+const SLOTCATNAME = {mao:'Mão',cabeca:'Cabeça',camiseta:'Camiseta',armadura:'Armadura',roupabaixo:'Roupa de Baixo',calca:'Calça',calcado:'Calçado',acessorio:'Acessório',consumivel:'Consumível'};
+const BOXES = [['bronze','Bronze','#cd7f32'],['prata','Prata','#c4cdd6'],['ouro','Ouro','#ffcf3f'],['platina','Platina','#8fe0ff'],['lendaria','Lendária','#ff8a2a'],['divina','Divina','#ffffff']];
+
+const TRACK = {
+  FOR:{cor:'var(--t-FOR)',nome:'Força'}, DEX:{cor:'var(--t-DEX)',nome:'Destreza'},
+  INT:{cor:'var(--t-INT)',nome:'Inteligência'}, CHA:{cor:'var(--t-CHA)',nome:'Carisma'},
+  NEU:{cor:'var(--t-NEU)',nome:'Neutra'}
+};
+
+const KEY='dcc_dashboard_v2', CATKEY='dcc_catalog_v2', URLKEY='dcc_catalog_url';
+const SKILLCATKEY='dcc_skillcat_v1', SKILLURLKEY='dcc_skillcat_url';
+let state = load() || {name:'',level:1,attr:{FOR:1,DEX:1,CON:1,INT:1,CHA:1},cards:{},inventory:[],gold:0,boxes:{bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0},skills:[],psTotal:2,pmCur:3};
+if(!state.inventory)state.inventory=[];
+if(state.gold==null)state.gold=0;
+if(!state.boxes)state.boxes={bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0};
+if(!state.skills)state.skills=[];
+if(state.psTotal==null)state.psTotal=2;
+if(state.pmCur==null)state.pmCur=state.attr.INT*3;
+let catalog = loadCatalog() || [];
+let skillCatalog = loadSkillCat() || [];
+let skillFilter='ALL';
+let editing=null, tab='cat', modalMode='slot';
+
+/* ---------- Firebase: sincronização ao vivo ---------- */
+const FBKEY='dcc_fb_cfg', ROOMKEY='dcc_room', PIDKEY='dcc_player_id';
+let fbApp=null, fbDb=null;
+// parâmetros da URL: ?mesa=<codigo>&pid=<seu-id>  (link pessoal da ficha)
+const URLP=new URLSearchParams(location.search);
+const URL_MESA=(URLP.get('mesa')||'').trim();
+const URL_PID=(URLP.get('pid')||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
+let playerId;
+if(URL_PID){ playerId='pid-'+URL_PID; localStorage.setItem(PIDKEY,playerId); }
+else { playerId=localStorage.getItem(PIDKEY); if(!playerId){playerId='p_'+Math.random().toString(36).slice(2,9);localStorage.setItem(PIDKEY,playerId);} }
+
+function toggleCfg(){const b=document.getElementById('cfgbar');b.style.display=(b.style.display==='none'?'flex':'none');}
+function parseCfg(raw){
+  let s=raw.replace(/^\s*(const|var|let)\s+\w+\s*=\s*/,'').replace(/;\s*$/,'').trim();
+  try{return JSON.parse(s);}catch(e){return (new Function('return ('+s+')'))();}
+}
+function saveCfg(){
+  const raw=document.getElementById('fbCfg').value.trim();
+  if(!raw){alert('Cole o firebaseConfig.');return;}
+  try{const cfg=parseCfg(raw);localStorage.setItem(FBKEY,JSON.stringify(cfg));
+    alert('Config salva. Agora digite o código da mesa e clique em "Conectar mesa".');toggleCfg();
+  }catch(e){alert('Config inválida. Cole o objeto firebaseConfig completo.');}
+}
+function connectCloud(){
+  const room=document.getElementById('roomCode').value.trim();
+  if(!room){alert('Digite o código da mesa.');return;}
+  const cfgRaw=localStorage.getItem(FBKEY);
+  if(!cfgRaw){alert('Configure o Firebase primeiro (⚙).');toggleCfg();return;}
+  try{
+    const cfg=JSON.parse(cfgRaw);
+    if(!fbApp){fbApp=firebase.initializeApp(cfg);}
+    fbDb=firebase.database();
+    localStorage.setItem(ROOMKEY,room);
+    const idlbl=(playerId.indexOf('pid-')===0)?(' · id: '+escapeHTML(playerId.slice(4))):'';
+    document.getElementById('syncStatus').innerHTML='Sincronização: <b style="color:var(--r-incomum)">● ao vivo · mesa '+escapeHTML(room)+'</b>'+idlbl;
+    cloudSyncOnConnect();
+  }catch(e){document.getElementById('syncStatus').innerHTML='Sincronização: <b style="color:#ff8a8a">erro</b>';alert('Falha ao conectar: '+e.message);}
+}
+function isDefaultSheet(){
+  return !(state.name) && Object.keys(state.cards||{}).length===0 && (state.skills||[]).length===0 && (state.inventory||[]).length===0 && (state.gold||0)===0;
+}
+function applyCloud(data){
+  const base={name:'',level:1,attr:{FOR:1,DEX:1,CON:1,INT:1,CHA:1},cards:{},inventory:[],gold:0,boxes:{bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0},skills:[],psTotal:2,pmCur:0};
+  state=Object.assign(base,data||{});
+  if(!state.attr)state.attr=base.attr;
+  localStorage.setItem(KEY,JSON.stringify(state));
+  document.getElementById('charName').value=state.name||'';
+  document.getElementById('level').value=state.level||1;
+  document.getElementById('gold').value=state.gold||0;
+  document.getElementById('psTotal').value=(state.psTotal!=null?state.psTotal:2);
+  renderAttrs(); updateAttrSqrt(); render();
+}
+function cloudSyncOnConnect(){ // ao conectar: puxa a própria ficha se a local estiver vazia; senão publica a local
+  if(!fbDb)return;
+  const room=localStorage.getItem(ROOMKEY); if(!room)return;
+  fbDb.ref('mesas/'+room+'/jogadores/'+playerId).once('value').then(snap=>{
+    const data=snap.val();
+    if(data && isDefaultSheet()){ applyCloud(data); } else { pushCloud(); }
+  }).catch(()=>{try{pushCloud();}catch(e){}});
+}
+function pullCloud(){ // botão "Puxar ficha" — recuperação manual
+  if(!fbDb){alert('Conecte-se à mesa primeiro (📡 Conectar mesa).');return;}
+  const room=localStorage.getItem(ROOMKEY); if(!room){alert('Conecte-se à mesa primeiro.');return;}
+  fbDb.ref('mesas/'+room+'/jogadores/'+playerId).once('value').then(snap=>{
+    const data=snap.val();
+    if(!data){alert('Nenhuma ficha salva na nuvem para este link ainda.');return;}
+    if(!confirm('Puxar a ficha salva na nuvem e SUBSTITUIR a ficha atual deste dispositivo?'))return;
+    applyCloud(data); alert('Ficha carregada da nuvem.');
+  }).catch(e=>alert('Falha ao puxar: '+e.message));
+}
+function pushCloud(){
+  if(!fbDb)return;
+  const room=localStorage.getItem(ROOMKEY); if(!room)return;
+  fbDb.ref('mesas/'+room+'/jogadores/'+playerId).set({
+    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),updatedAt:Date.now()
+  });
+}
+function persistState(){localStorage.setItem(KEY,JSON.stringify(state));pushCloud();}
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function loadCatalog(){try{return JSON.parse(localStorage.getItem(CATKEY))}catch(e){return null}}
+function save(){
+  state.name=document.getElementById('charName').value;
+  state.level=+document.getElementById('level').value||1;
+  ATTRS.forEach(([s])=>{state.attr[s]=+document.getElementById('a_'+s).value||1});
+  updateAttrSqrt();
+  persistState();render();
+}
+function updateAttrSqrt(){
+  ATTRS.forEach(([s])=>{const el=document.getElementById('sq_'+s); if(el)el.textContent='⌊√⌋ '+isqrt(state.attr[s]);});
+}
+const isqrt = x => Math.floor(Math.sqrt(Math.max(0,x)));
+function escapeHTML(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+
+/* ---------- catálogo ---------- */
+function setCatalog(arr,fromUrl){
+  catalog = Array.isArray(arr) ? arr : (arr.itens||[]);
+  localStorage.setItem(CATKEY,JSON.stringify(catalog));
+  document.getElementById('catStatus').innerHTML='Catálogo: <b>'+catalog.length+' cartas</b>'+(fromUrl?' (do link)':'');
+}
+async function loadCatalogFromUrl(){
+  const url=document.getElementById('catUrl').value.trim();
+  if(!url){alert('Cole o link do catálogo primeiro.');return;}
+  try{
+    const r=await fetch(url,{cache:'no-store'}); if(!r.ok)throw 0;
+    const data=await r.json(); setCatalog(data,true);
+    localStorage.setItem(URLKEY,url); render();
+  }catch(e){alert('Não consegui carregar do link. Confira se é um link DIRETO para o .json (Dropbox com ?dl=1, ou GitHub "raw").');}
+}
+function loadCatalogFromFile(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{setCatalog(JSON.parse(r.result),false);render();}catch(err){alert('Arquivo de catálogo inválido.')}};
+  r.readAsText(f); e.target.value='';
+}
+
+/* ---------- atributos + derivados ---------- */
+function renderAttrs(){
+  document.getElementById('attrs').innerHTML = ATTRS.map(([s,full])=>`
+    <div class="attr" title="${full}"><div class="sig">${s}</div>
+      <input type="number" id="a_${s}" min="1" value="${state.attr[s]}" oninput="save()">
+      <div class="sqrt" id="sq_${s}">⌊√⌋ ${isqrt(state.attr[s])}</div></div>`).join('');
+}
+function totalDef(){
+  let bonus=0; Object.values(state.cards).forEach(c=>bonus+=(+c.def||0));
+  return {sqrt:isqrt(state.attr.DEX),bonus,total:isqrt(state.attr.DEX)+bonus};
+}
+function renderDerived(){
+  const hp=8+state.attr.CON*3, mana=state.attr.INT*3, d=totalDef();
+  document.getElementById('derived').innerHTML=`
+    <div class="stat"><div class="k">HP máximo</div><div class="v">${hp}</div><div class="sub">8 + CON×3</div></div>
+    <div class="stat"><div class="k">Mana</div><div class="v">${mana}</div><div class="sub">INT×3</div></div>
+    <div class="stat def"><div class="k">Defesa</div><div class="v">${d.total}</div><div class="sub">⌊√DEX⌋ ${d.sqrt} + equip ${d.bonus}</div></div>
+    <div class="stat"><div class="k">Iniciativa</div><div class="v">+${d.sqrt}</div><div class="sub">d20 + ⌊√DEX⌋</div></div>`;
+}
+
+/* ---------- regra das mãos ---------- */
+function blockedHand(){
+  if(state.cards.maoE&&state.cards.maoE.twoHand) return 'maoD';
+  if(state.cards.maoD&&state.cards.maoD.twoHand) return 'maoE';
+  return null;
+}
+
+/* ---------- board ---------- */
+function cardStatsHTML(c){
+  const dmg=(c.d1||c.d2||c.d3)?`<div><span class="dmg">Dano ${c.d1||0} / ${c.d2||0} / ${c.d3||0}</span>${c.attr?' ['+c.attr+']':''}</div>`:'';
+  const prec=c.prec?`<div>Precisão +${c.prec}</div>`:'';
+  const def=c.def?`<div><span class="def">Defesa +${c.def}</span></div>`:'';
+  const ub=(c.ubd||c.ubp)?`<div><span style="color:#ff9d5c;font-weight:700">Desarmado ${c.ubd?'+'+c.ubd+' faixa':''}${c.ubd&&c.ubp?' · ':''}${c.ubp?'+'+c.ubp+' Prec':''}</span></div>`:'';
+  return dmg+prec+def+ub;
+}
+function renderBoard(){
+  const board=document.getElementById('board'); const blocked=blockedHand();
+  let html=''; let lastGroup=null;
+  SLOTS.forEach(s=>{
+    if(s.grupo!==lastGroup){html+=`<div class="slot-label">${s.grupo}</div>`;lastGroup=s.grupo;}
+    const c=state.cards[s.id];
+    if(blocked===s.id){
+      html+=`<div class="slot blocked"><span class="slot-mini">${s.nome}</span>
+        <div style="margin:auto;text-align:center;font-size:11px">🔒<br>Ocupado por arma<br>de duas mãos</div></div>`;return;
+    }
+    if(!c){
+      html+=`<div class="slot empty" onclick="openModal('${s.id}')"><span class="slot-mini">${s.nome}</span>
+        <div class="ico">${s.ico}</div><div class="nm">${s.nome}</div><div class="hint">+ encaixar carta</div></div>`;
+    }else{
+      const r=RAR[c.rar]||RAR.comum;
+      const fx=c.fx?`<div class="card-fx">${escapeHTML(c.fx)}</div>`:'';
+      html+=`<div class="slot filled" style="border-color:${r.cor}" onclick="openModal('${s.id}')">
+        <span class="slot-mini">${s.nome}</span>
+        <div class="card-top"><div class="card-name">${escapeHTML(c.name||'(sem nome)')}</div>
+          <span class="rar-chip" style="background:${r.cor}">${r.nome}</span></div>
+        <div class="card-type">${escapeHTML(c.type||'')}</div>
+        <div class="card-stats">${cardStatsHTML(c)}</div>${fx}
+        ${c.twoHand?'<span class="twohand-tag">⚔ 2 mãos</span>':''}</div>`;
+    }
+  });
+  board.innerHTML=html;
+  document.getElementById('handHint').textContent = blockedHand()
+    ? '🖐 Arma de duas mãos equipada — a outra mão está bloqueada.'
+    : '🖐 Você pode equipar 2 itens de uma mão OU 1 item de duas mãos.';
+}
+function multStrOf(m){return (Math.round(m*100)/100).toString().replace('.',',');}
+function atkRow(name,tag,bands,prec,color){
+  return `<div class="atk" style="border-left-color:${color}">
+    <div class="atk-top"><span class="atk-name">${escapeHTML(name)}</span><span class="atk-tag">${escapeHTML(tag)}</span></div>
+    <div class="atk-dmg"><b>${bands[0]}</b> / <b>${bands[1]}</b> / <b>${bands[2]}</b><span class="atk-prec">Prec +${prec}</span></div>
+  </div>`;
+}
+function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells/skills com dano)
+  const el=document.getElementById('unarmed'); if(!el)return;
+  const rows=[]; const TR={FOR:'var(--t-FOR)',DEX:'var(--t-DEX)',INT:'var(--t-INT)',CHA:'var(--t-CHA)',NEU:'var(--t-NEU)'};
+  // 1) Desarmado
+  const FOR=state.attr.FOR||1, DEX=state.attr.DEX||1, reg=FOR>=DEX?'FOR':'DEX', regVal=Math.max(FOR,DEX);
+  let ubd=0,ubp=0; Object.values(state.cards).forEach(c=>{ubd+=(+c.ubd||0);ubp+=(+c.ubp||0);});
+  const um=regVal/5, ub=[1,2,4].map(b=>Math.max(1,Math.floor((b+ubd)*um)));
+  rows.push(atkRow('Desarmado','['+reg+'] · punhos'+(ubd?' +'+ubd+'f gear':''), ub, isqrt(regVal)+ubp, '#ff9d5c'));
+  // 2) Armas equipadas (têm faixas e atributo regente)
+  Object.values(state.cards).forEach(c=>{
+    if((c.d1||c.d2||c.d3) && c.attr){
+      const av=state.attr[c.attr]||1, m=av/5;
+      const b=[c.d1,c.d2,c.d3].map(x=>Math.max(1,Math.floor((+x||0)*m)));
+      rows.push(atkRow(c.name||'Arma','['+c.attr+'] · arma', b, isqrt(av)+(+c.prec||0), RAR[c.rar]?RAR[c.rar].cor:'var(--r-comum)'));
+    }
+  });
+  // 3) Spells/skills com dano numérico no texto:  X / Y / Z [ATTR]
+  (state.skills||[]).forEach(s=>{
+    const mt=(s.desc||'').match(/(\d+)\s*\/\s*(\d+)\s*\/\s*(\d+)\s*\[(FOR|DEX|INT|CHA|CON)\]/);
+    if(mt){
+      const attr=mt[4], av=state.attr[attr]||1, m=av/5;
+      const b=[+mt[1],+mt[2],+mt[3]].map(x=>Math.max(1,Math.floor(x*m)));
+      const cost=s.passiva?'passiva':([(+s.pm>0?'PM'+s.pm:''),(+s.cd>0?'CD'+s.cd:'')].filter(Boolean).join('·')||'livre');
+      rows.push(atkRow(s.name,'['+attr+'] · '+cost, b, isqrt(av), TR[s.track]||TR.NEU));
+    }
+  });
+  el.innerHTML=`
+    <div class="uhead"><span class="utitle">⚔ Ataques</span>
+      <span class="ureg">dano final (faixa × atrib÷5)</span></div>
+    <div class="atk-list">${rows.join('')}</div>
+    <div class="atk-foot">Baixa / Média / Alta já calculadas. Crítico = faixa Alta × 2. Improvisada: 1/3/6 [FOR].
+    Spells sem número aqui (faixa "Média/Alta") aparecem só na lista de Skills.</div>`;
+}
+function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();}
+
+/* ---------- helpers de carta ---------- */
+function uid(){return 'i_'+Math.random().toString(36).slice(2,9);}
+function cardFromCatalog(i){return {name:i.name,type:i.type,rar:i.rar,d1:i.d1||0,d2:i.d2||0,d3:i.d3||0,
+  attr:i.attr||'',prec:i.prec||0,def:i.def||0,twoHand:!!i.twoHand,ubd:+i.ubd||0,ubp:+i.ubp||0,fx:i.fx||'',srcId:i.id||''};}
+function catOf(slotId){const s=SLOTS.find(x=>x.id===slotId);return s?s.cat:'';}
+function addInvItem(card,cat,qty){
+  qty=qty||1;
+  const m=state.inventory.find(x=>x.cat===cat&&(x.name||'')===(card.name||'')&&(x.type||'')===(card.type||'')&&x.rar===card.rar&&!!x.twoHand===!!card.twoHand&&(x.fx||'')===(card.fx||''));
+  if(m){m.qty=(m.qty||1)+qty;}
+  else{const c=Object.assign({},card);delete c.uid;state.inventory.push(Object.assign({uid:uid(),cat:cat,qty:qty},c));}
+}
+function moveToInventory(card,cat){if(!card)return;addInvItem(card,cat,1);}
+
+/* coloca uma carta num slot, devolvendo ao inventário o que for deslocado */
+function equipCard(card,slotId){
+  const cat=catOf(slotId);
+  if(cat==='mao'){
+    ['maoE','maoD'].forEach(h=>{if(state.cards[h]&&state.cards[h].twoHand){moveToInventory(state.cards[h],'mao');delete state.cards[h];}});
+    if(card.twoHand){['maoE','maoD'].forEach(h=>{if(state.cards[h]){moveToInventory(state.cards[h],'mao');delete state.cards[h];}});}
+    else if(state.cards[slotId]){moveToInventory(state.cards[slotId],'mao');}
+    state.cards[slotId]=card;
+  }else{
+    if(state.cards[slotId])moveToInventory(state.cards[slotId],cat);
+    state.cards[slotId]=card;
+  }
+  persistState();render();
+}
+
+/* ---------- modal ---------- */
+function openModal(slotId){
+  modalMode='slot'; editing=slotId;
+  const s=SLOTS.find(x=>x.id===slotId);
+  document.getElementById('modalTitle').textContent='Slot · '+s.nome;
+  document.getElementById('modalSub').textContent = state.cards[slotId]
+    ? 'Já equipado. Escolha outra carta para trocar (a atual volta ao inventário).' : 'Escolha uma carta do catálogo ou crie uma personalizada.';
+  document.getElementById('m_delete').style.display = state.cards[slotId]?'block':'none';
+  setTab('cat'); document.getElementById('overlay').classList.add('show');
+}
+function openAddItem(){
+  modalMode='inv'; editing=null;
+  document.getElementById('modalTitle').textContent='Adicionar ao inventário';
+  document.getElementById('modalSub').textContent='Escolha do catálogo ou crie uma carta. Vai direto para o inventário.';
+  document.getElementById('m_delete').style.display='none';
+  setTab('cat'); document.getElementById('overlay').classList.add('show');
+}
+function setTab(t){
+  tab=t;
+  document.getElementById('tabCat').classList.toggle('on',t==='cat');
+  document.getElementById('tabCustom').classList.toggle('on',t==='custom');
+  document.getElementById('paneCat').style.display = t==='cat'?'block':'none';
+  document.getElementById('paneCustom').style.display = t==='custom'?'block':'none';
+  document.getElementById('m_save').style.display = t==='custom'?'block':'none';
+  if(t==='cat') renderPicker();
+  if(t==='custom') fillEditor();
+}
+function renderPicker(){
+  const list=document.getElementById('pickerList');
+  if(!catalog.length){list.innerHTML='<div class="pk-empty">Nenhum catálogo carregado.<br>Carregue um link ou arquivo na barra do topo.</div>';return;}
+  let items;
+  if(modalMode==='inv'){items=catalog.slice();}
+  else{const s=SLOTS.find(x=>x.id===editing);items=catalog.filter(i=>i.slot===s.cat);}
+  if(!items.length){list.innerHTML='<div class="pk-empty">Nenhuma carta de catálogo para este slot.<br>Use a aba "Carta personalizada".</div>';return;}
+  const action = modalMode==='inv' ? 'addCatalogToInventory' : 'equipFromCatalog';
+  list.innerHTML=items.map(i=>{
+    const r=RAR[i.rar]||RAR.comum;
+    const fx=i.fx?`<div class="pf">${escapeHTML(i.fx)}</div>`:'';
+    const tag=modalMode==='inv'?(' · '+(SLOTCATNAME[i.slot]||i.slot)):'';
+    return `<div class="pk" style="border-color:${r.cor}" onclick='${action}(${JSON.stringify(i.id)})'>
+      <div class="pn">${escapeHTML(i.name)}</div><div class="pt">${escapeHTML(i.type||'')} · ${r.nome}${tag}</div>
+      <div class="ps">${cardStatsHTML(i)}</div>${fx}</div>`;
+  }).join('');
+}
+function equipFromCatalog(id){const i=catalog.find(x=>x.id===id);if(!i)return;equipCard(cardFromCatalog(i),editing);closeModal();}
+function addCatalogToInventory(id){const i=catalog.find(x=>x.id===id);if(!i)return;
+  addInvItem(cardFromCatalog(i),i.slot,1);persistState();render();closeModal();}
+
+function fillEditor(){
+  const invMode=modalMode==='inv';
+  const c=invMode?{}:(state.cards[editing]||{});
+  const g=(id,v)=>document.getElementById(id).value=(v??'');
+  g('m_name',c.name);g('m_type',c.type);document.getElementById('m_rar').value=c.rar||'comum';
+  g('m_d1',c.d1||'');g('m_d2',c.d2||'');g('m_d3',c.d3||'');document.getElementById('m_attr').value=c.attr||'';
+  g('m_prec',c.prec||'');g('m_def',c.def||'');document.getElementById('m_2h').checked=!!c.twoHand;g('m_fx',c.fx);
+  if(invMode)document.getElementById('m_qty').value=1;
+  document.getElementById('m_invwrap').style.display=invMode?'grid':'none';
+  const hand=invMode?true:SLOTS.find(x=>x.id===editing).hand;
+  document.getElementById('twohandWrap').style.display=hand?'block':'none';
+  document.getElementById('weaponFields').style.display=hand?'block':'none';
+}
+function readEditor(){
+  const g=id=>document.getElementById(id).value; const num=id=>{const v=g(id);return v===''?0:+v};
+  return {name:g('m_name'),type:g('m_type'),rar:g('m_rar'),d1:num('m_d1'),d2:num('m_d2'),d3:num('m_d3'),
+    attr:g('m_attr'),prec:num('m_prec'),def:num('m_def'),twoHand:document.getElementById('m_2h').checked,fx:g('m_fx')};
+}
+function saveCard(){
+  const card=readEditor();
+  if(modalMode==='inv'){
+    const cat=document.getElementById('m_cat').value;
+    const qty=Math.max(1,+document.getElementById('m_qty').value||1);
+    if(cat!=='mao')card.twoHand=false;
+    addInvItem(card,cat,qty);
+    persistState();render();closeModal();return;
+  }
+  const s=SLOTS.find(x=>x.id===editing);
+  if(s.cat==='mao'){
+    const other=editing==='maoE'?'maoD':'maoE';
+    if(card.twoHand&&state.cards[other]){moveToInventory(state.cards[other],'mao');delete state.cards[other];}
+  }
+  state.cards[editing]=card; persistState();closeModal();render();
+}
+function deleteCard(){ // desequipar -> volta ao inventário
+  if(state.cards[editing])moveToInventory(state.cards[editing],catOf(editing));
+  delete state.cards[editing]; persistState();closeModal();render();
+}
+function closeModal(){document.getElementById('overlay').classList.remove('show');editing=null;}
+
+/* ---------- inventário ---------- */
+function freeAccSlot(){return ['acc1','acc2','acc3','acc4','acc5'].find(s=>!state.cards[s]);}
+function freeHandSlot(){const b=blockedHand();return ['maoE','maoD'].find(s=>!state.cards[s]&&b!==s);}
+function renderInventory(){
+  const list=document.getElementById('invList');
+  const totQ=state.inventory.reduce((a,b)=>a+(b.qty||1),0);
+  document.getElementById('invCount').textContent = state.inventory.length?('· '+totQ):'';
+  if(!state.inventory.length){list.innerHTML='<div class="inv-empty">Inventário vazio. Use "+ Adicionar item" para guardar loot sobressalente.</div>';return;}
+  list.innerHTML=state.inventory.map(it=>{
+    const r=RAR[it.rar]||RAR.comum; const q=it.qty||1;
+    const fx=it.fx?`<div class="fx">${escapeHTML(it.fx)}</div>`:'';
+    const u=JSON.stringify(it.uid);
+    const stepper=`<div class="qty"><button onclick='changeQty(${u},-1)'>−</button><span class="q">×${q}</span><button onclick='changeQty(${u},1)'>+</button></div>`;
+    const primary = it.cat==='consumivel'
+      ? `<button class="sm primary" onclick='useConsumable(${u})'>Usar</button>`
+      : `<button class="sm primary" onclick='equipFromInventory(${u})'>Equipar</button>`;
+    return `<div class="inv" style="border-left-color:${r.cor}">
+      <span class="rar-chip" style="background:${r.cor}">${r.nome}</span>
+      <div class="meta">
+        <div class="nm">${escapeHTML(it.name||'(sem nome)')}${it.twoHand?' ⚔':''}${q>1?' <span style="color:var(--accent2)">×'+q+'</span>':''}</div>
+        <div class="tp">${escapeHTML(it.type||'')} · ${SLOTCATNAME[it.cat]||it.cat}</div>
+        <div class="st">${cardStatsHTML(it)}</div>${fx}
+      </div>
+      <div class="acts">${stepper}${primary}
+        <button class="sm danger ghost" onclick='discardInventory(${u})'>Descartar</button>
+      </div></div>`;
+  }).join('');
+}
+function changeQty(u,d){
+  const it=state.inventory.find(x=>x.uid===u); if(!it)return;
+  it.qty=Math.max(1,(it.qty||1)+d); persistState();render();
+}
+function useConsumable(u){
+  const it=state.inventory.find(x=>x.uid===u); if(!it)return;
+  it.qty=(it.qty||1)-1;
+  if(it.qty<=0)state.inventory=state.inventory.filter(x=>x.uid!==u);
+  persistState();render();
+}
+function equipFromInventory(u){
+  const idx=state.inventory.findIndex(x=>x.uid===u); if(idx<0)return;
+  const it=state.inventory[idx]; const cat=it.cat; let slotId;
+  if(cat==='consumivel'){alert('Consumíveis não são equipados — use o botão "Usar".');return;}
+  if(cat==='acessorio'){slotId=freeAccSlot();if(!slotId){alert('Os 5 acessórios estão ocupados. Desequipe um antes.');return;}}
+  else if(cat==='mao'){
+    if(it.twoHand){slotId='maoE';}
+    else{slotId=freeHandSlot();if(!slotId){alert('Ambas as mãos estão ocupadas. Desequipe uma antes.');return;}}
+  }else{slotId=cat;}
+  const card=Object.assign({},it); delete card.uid; delete card.cat; delete card.qty;
+  if((it.qty||1)>1){it.qty=it.qty-1;}else{state.inventory.splice(idx,1);}
+  equipCard(card,slotId); // já faz persist + render
+}
+function discardInventory(u){
+  const it=state.inventory.find(x=>x.uid===u); if(!it)return;
+  if(!confirm('Descartar "'+(it.name||'item')+'" do inventário? Isso é permanente.'))return;
+  state.inventory=state.inventory.filter(x=>x.uid!==u); persistState();render();
+}
+
+/* ---------- ouro + caixas ---------- */
+function saveGold(){state.gold=Math.max(0,+document.getElementById('gold').value||0);persistState();}
+function changeBox(tier,d){state.boxes[tier]=Math.max(0,(state.boxes[tier]||0)+d);persistState();render();}
+function renderBoxes(){
+  document.getElementById('boxes').innerHTML=BOXES.map(([k,nome,cor])=>`
+    <div class="box" style="--bc:${cor}">
+      <div class="bname">${nome}</div>
+      <div class="bctrl"><button onclick="changeBox('${k}',-1)">−</button>
+        <span class="bcount">${state.boxes[k]||0}</span>
+        <button onclick="changeBox('${k}',1)">+</button></div>
+    </div>`).join('');
+}
+
+/* ---------- ficha import/export/reset ---------- */
+function exportChar(){
+  save();
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=(state.name||'crawler').replace(/\s+/g,'_')+'_ficha.json';a.click();
+}
+function importChar(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{state=JSON.parse(r.result);persistState();init();}catch(err){alert('Ficha inválida.')}};
+  r.readAsText(f);e.target.value='';
+}
+function resetAll(){
+  if(!confirm('Limpar a ficha e as cartas equipadas? (O catálogo é mantido.)'))return;
+  state={name:'',level:1,attr:{FOR:1,DEX:1,CON:1,INT:1,CHA:1},cards:{},inventory:[],gold:0,boxes:{bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0},skills:[],psTotal:2,pmCur:3};
+  persistState();init();
+}
+
+/* ---------- SKILLS ---------- */
+function loadSkillCat(){try{return JSON.parse(localStorage.getItem(SKILLCATKEY))}catch(e){return null}}
+function setSkillCat(arr,fromUrl){
+  skillCatalog = Array.isArray(arr) ? arr : (arr.skills||arr.itens||[]);
+  localStorage.setItem(SKILLCATKEY,JSON.stringify(skillCatalog));
+  document.getElementById('skillCatStatus').innerHTML='Skills: <b>'+skillCatalog.length+' no catálogo</b>'+(fromUrl?' (do link)':'');
+}
+async function loadSkillCatFromUrl(){
+  const url=document.getElementById('skillCatUrl').value.trim();
+  if(!url){alert('Cole o link do catálogo de skills primeiro.');return;}
+  try{const r=await fetch(url,{cache:'no-store'}); if(!r.ok)throw 0;
+    setSkillCat(await r.json(),true); localStorage.setItem(SKILLURLKEY,url); renderSkills();
+  }catch(e){alert('Não consegui carregar. Confira se é um link DIRETO para o .json (Dropbox ?dl=1 ou GitHub raw).');}
+}
+function loadSkillCatFromFile(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{setSkillCat(JSON.parse(r.result),false);renderSkills();}catch(err){alert('Arquivo de skills inválido.')}};
+  r.readAsText(f); e.target.value='';
+}
+// custo: rank1=1 PS; entrar nos ranks 2-5 = 1 cada; 6-10 = 2 cada; 11-15 = 4 cada
+function rankStepCost(r){return r<=5?1:(r<=10?2:4);}            // custo para ENTRAR no rank r (r>=2)
+function skillTotalCost(rank){let t=1;for(let r=2;r<=rank;r++)t+=rankStepCost(r);return t;}
+function skillNextCost(rank){return rank>=15?0:rankStepCost(rank+1);}
+function psSpent(){return state.skills.reduce((a,s)=>a+skillTotalCost(s.rank||1),0);}
+function manaMax(){return state.attr.INT*3;}
+// monta o rótulo de custo de uma skill (PM / cooldown / passiva / recarga especial)
+function skillCostLabel(s){
+  if(s.passiva) return '<span style="color:var(--t-NEU)">Passiva</span>';
+  const parts=[];
+  if((+s.pm||0)>0) parts.push('<span style="color:#7fb0ff">PM '+s.pm+'</span>');
+  if(s.recargaEsp) parts.push('<span style="color:var(--accent2)">Recarga: '+escapeHTML(s.recargaEsp)+'</span>');
+  else if((+s.cd||0)>0) parts.push('<span style="color:var(--accent2)">CD '+s.cd+'</span>');
+  if(!parts.length) parts.push('<span style="color:var(--dim)">Ação livre</span>');
+  return parts.join(' · ');
+}
+
+function openSkillPicker(){
+  if(!skillCatalog.length){alert('Carregue o catálogo de skills primeiro (barra "Skills" no topo).');return;}
+  skillFilter='ALL'; renderTrackFilter(); renderSkillPicker();
+  document.getElementById('skillOverlay').classList.add('show');
+}
+function closeSkillModal(){document.getElementById('skillOverlay').classList.remove('show');}
+function renderTrackFilter(){
+  const tracks=['ALL','FOR','DEX','INT','CHA','NEU'];
+  document.getElementById('trackFilter').innerHTML=tracks.map(t=>{
+    const nome=t==='ALL'?'Todas':(TRACK[t]?TRACK[t].nome:t);
+    return `<button class="${skillFilter===t?'on':''}" onclick="setSkillFilter('${t}')">${nome}</button>`;
+  }).join('');
+}
+function setSkillFilter(t){skillFilter=t;renderTrackFilter();renderSkillPicker();}
+function renderSkillPicker(){
+  const list=document.getElementById('skillPickerList');
+  const owned=new Set(state.skills.map(s=>s.srcId));
+  let items=skillCatalog.filter(s=>skillFilter==='ALL'||s.track===skillFilter);
+  if(!items.length){list.innerHTML='<div class="pk-empty">Nenhuma skill nesta trilha.</div>';return;}
+  list.innerHTML=items.map(s=>{
+    const tr=TRACK[s.track]||TRACK.NEU; const has=owned.has(s.id);
+    return `<div class="pk" style="border-color:${tr.cor};${has?'opacity:.45':''}"
+        onclick='${has?'':`addSkill(${JSON.stringify(s.id)})`}'>
+      <div class="pn">${escapeHTML(s.name)}<span class="pchip" style="background:${tr.cor}">${s.track}</span></div>
+      <div class="pt">${escapeHTML(s.type||'')} · ${skillCostLabel(s)}${has?' · <b>já aprendida</b>':''}</div>
+      <div class="pf" style="font-style:normal;color:var(--txt)">${escapeHTML(s.desc||'')}</div></div>`;
+  }).join('');
+}
+function addSkill(id){
+  const s=skillCatalog.find(x=>x.id===id); if(!s)return;
+  if(state.skills.some(x=>x.srcId===id))return;
+  state.skills.push({srcId:s.id,name:s.name,track:s.track,type:s.type,
+    passiva:!!s.passiva,pm:+s.pm||0,cd:+s.cd||0,recargaEsp:s.recargaEsp||'',
+    desc:s.desc,r5:s.r5||'',r10:s.r10||'',r15:s.r15||'',rank:1});
+  persistState();renderSkills();renderUnarmed();closeSkillModal();
+}
+function removeSkill(id){
+  const s=state.skills.find(x=>x.srcId===id); if(!s)return;
+  if(!confirm('Remover "'+s.name+'"? Os PS investidos voltam a ficar disponíveis.'))return;
+  state.skills=state.skills.filter(x=>x.srcId!==id); persistState();renderSkills();renderUnarmed();
+}
+function changeRank(id,d){
+  const s=state.skills.find(x=>x.srcId===id); if(!s)return;
+  let nr=Math.min(15,Math.max(1,(s.rank||1)+d));
+  if(d>0){ // checa PS
+    const extra=skillTotalCost(nr)-skillTotalCost(s.rank||1);
+    if(psSpent()+extra>state.psTotal){alert('PS insuficientes. Aumente os PS totais ou suba outra skill.');return;}
+  }
+  s.rank=nr; persistState();renderSkills();renderUnarmed();
+}
+function renderSkills(){
+  renderPm();
+  // tracker PS
+  const spent=psSpent(), left=(state.psTotal||0)-spent;
+  document.getElementById('psSpent').textContent=spent;
+  const le=document.getElementById('psLeft'); le.textContent=left;
+  le.className='big '+(left<0?'over':'ok');
+  document.getElementById('skillCount').textContent=state.skills.length?('· '+state.skills.length):'';
+  const list=document.getElementById('skillList');
+  if(!state.skills.length){list.innerHTML='<div class="skill-empty">Nenhuma skill ainda. Carregue o catálogo de skills e clique em "+ Adicionar skill".</div>';return;}
+  list.innerHTML=state.skills.map(s=>{
+    const tr=TRACK[s.track]||TRACK.NEU; const rank=s.rank||1;
+    const id=JSON.stringify(s.srcId);
+    const evo=(lbl,txt,need)=>txt?`<div class="sk-evo ${rank>=need?'on':'off'}"><span class="lk">${rank>=need?'✓':'🔒'} R${need}</span><span>${escapeHTML(txt)}</span></div>`:'';
+    const next=skillNextCost(rank);
+    const nextTxt=rank>=15?'RANK MÁX':`próx. rank: <b>${next} PS</b>`;
+    return `<div class="sk-card" style="border-left-color:${tr.cor}">
+      <button class="sm danger ghost sk-x" onclick='removeSkill(${id})'>✕</button>
+      <div class="sk-top">
+        <div><div class="sk-name">${escapeHTML(s.name)}</div>
+          <div class="sk-meta">${escapeHTML(s.type||'')} · ${skillCostLabel(s)}</div></div>
+        <span class="sk-chip" style="background:${tr.cor}">${s.track}</span>
+      </div>
+      <div class="sk-rankrow">
+        <span class="rlbl">Rank</span>
+        <button onclick='changeRank(${id},-1)'>−</button>
+        <span class="rval">${rank}/15</span>
+        <button onclick='changeRank(${id},1)'>+</button>
+        <span class="sk-next">${nextTxt}</span>
+      </div>
+      <div class="sk-desc">${escapeHTML(s.desc||'')}</div>
+      <div class="sk-evos">${evo('5',s.r5,5)}${evo('10',s.r10,10)}${evo('15',s.r15,15)}</div>
+    </div>`;
+  }).join('');
+}
+function saveSkills(){state.psTotal=Math.max(0,+document.getElementById('psTotal').value||0);persistState();renderSkills();}
+function savePm(){state.pmCur=Math.max(0,+document.getElementById('pmCur').value||0);persistState();renderPm();}
+function restorePm(){state.pmCur=manaMax();document.getElementById('pmCur').value=state.pmCur;persistState();renderPm();}
+function renderPm(){
+  const mx=manaMax();
+  document.getElementById('pmMax').textContent=mx;
+  const cur=document.getElementById('pmCur');
+  if(state.pmCur==null)state.pmCur=mx;
+  if(state.pmCur>mx)state.pmCur=mx;
+  if(document.activeElement!==cur)cur.value=state.pmCur;
+}
+
+/* ---------- init ---------- */
+async function init(){
+  // normaliza fichas antigas/importadas
+  if(!state.inventory)state.inventory=[];
+  if(state.gold==null)state.gold=0;
+  if(!state.boxes)state.boxes={bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0};
+  if(!state.skills)state.skills=[];
+  if(state.psTotal==null)state.psTotal=2;
+  if(state.pmCur==null)state.pmCur=state.attr.INT*3;
+  document.getElementById('charName').value=state.name||'';
+  document.getElementById('level').value=state.level||1;
+  document.getElementById('gold').value=state.gold||0;
+  document.getElementById('psTotal').value=state.psTotal||0;
+  renderAttrs();
+  // reconecta à mesa automaticamente, se já configurado (o ?mesa= da URL tem prioridade)
+  if(URL_MESA)localStorage.setItem(ROOMKEY,URL_MESA);
+  const savedRoom=localStorage.getItem(ROOMKEY);
+  if(savedRoom)document.getElementById('roomCode').value=savedRoom;
+  if(savedRoom&&localStorage.getItem(FBKEY)){try{connectCloud();}catch(e){}}
+  const savedUrl=localStorage.getItem(URLKEY);
+  if(savedUrl){document.getElementById('catUrl').value=savedUrl;}
+  if(catalog.length){document.getElementById('catStatus').innerHTML='Catálogo: <b>'+catalog.length+' cartas</b>';}
+  const savedSkillUrl=localStorage.getItem(SKILLURLKEY);
+  if(savedSkillUrl){document.getElementById('skillCatUrl').value=savedSkillUrl;}
+  if(skillCatalog.length){document.getElementById('skillCatStatus').innerHTML='Skills: <b>'+skillCatalog.length+' no catálogo</b>';}
+  render();
+  // tenta atualizar o catálogo do link salvo, silenciosamente
+  if(savedUrl){try{const r=await fetch(savedUrl,{cache:'no-store'});if(r.ok){setCatalog(await r.json(),true);}}catch(e){}}
+  if(savedSkillUrl){try{const r=await fetch(savedSkillUrl,{cache:'no-store'});if(r.ok){setSkillCat(await r.json(),true);renderSkills();}}catch(e){}}
+}
+init();
+</script>
+</body>
+</html>
