@@ -67,6 +67,23 @@
   .skrow .nm{padding-left:6px}
   .skrow .rk{color:var(--accent2);font-weight:700;white-space:nowrap;font-size:9.5px}
   .pstag{font-size:10px;font-weight:700;color:#c9a3ff;background:#11141a;border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+  .patag{font-size:10px;font-weight:700;color:#ffd166;background:#11141a;border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+  .compan-wrap{display:flex;flex-direction:column;gap:4px}
+  .compan-row{display:flex;gap:8px;align-items:baseline;font-size:10.5px;border-left:3px solid #4caf50;padding-left:6px;flex-wrap:wrap}
+  .compan-row .cnm{font-weight:700}
+  .compan-row .chpc{color:#ff8a8a;white-space:nowrap}
+  .compan-row .cnt{color:var(--dim)}
+  /* trackers do mestre */
+  .gmbar{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .gmbox{display:flex;align-items:center;gap:8px}
+  .gmbox .lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
+  .gmbox input{background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:6px;padding:5px 7px;font-size:13px;width:64px;text-align:center}
+  .gmbox .xpbar{width:160px;height:10px;background:#11141a;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .gmbox .xpfill{height:100%;background:linear-gradient(90deg,#4caf50,#ffcf3f)}
+  .gmbox button{padding:4px 9px;font-size:13px}
+  .colpips{display:flex;gap:4px}
+  .colpip{width:16px;height:16px;border-radius:4px;border:1px solid var(--line);background:#11141a;cursor:pointer}
+  .colpip.on{background:#ff5d5d;border-color:#ff5d5d}
 </style>
 </head>
 <body>
@@ -87,6 +104,11 @@
   <div class="catbar" id="cfgbar" style="display:none">
     <textarea id="fbCfg" placeholder="Cole aqui o objeto firebaseConfig do seu projeto…"></textarea>
     <button class="sm" onclick="saveCfg()">Salvar config</button>
+  </div>
+
+  <div class="gmbar">
+    <div class="gmbox"><span class="lbl">Colapso do andar</span><div class="colpips" id="gmColapso"></div></div>
+    <div class="gmbox"><span class="lbl" style="color:var(--dim)">XP é individual — controle pelo card de cada jogador (campo XP).</span></div>
   </div>
 
   <div class="players" id="players"><div class="nobody">Conecte-se a uma mesa para ver os crawlers.</div></div>
@@ -125,7 +147,9 @@ function skillsHTML(sks){
 const SLOTLABEL={maoE:'Mão Esq.',maoD:'Mão Dir.',cabeca:'Cabeça',camiseta:'Camiseta',armadura:'Armadura',roupabaixo:'R. Baixo',calca:'Calça',calcado:'Calçado',acc1:'Acess. 1',acc2:'Acess. 2',acc3:'Acess. 3',acc4:'Acess. 4',acc5:'Acess. 5'};
 const SLOTORDER=['maoE','maoD','cabeca','camiseta','armadura','roupabaixo','calca','calcado','acc1','acc2','acc3','acc4','acc5'];
 const FBKEY='dcc_fb_cfg', ROOMKEY='dcc_mestre_room';
-let fbApp=null, fbDb=null, currentRef=null;
+let fbApp=null, fbDb=null, currentRef=null, gmRef=null;
+let gmState={nivel:1,xp:0,xpAlvo:300,colapso:0};
+const COL_PIPS=6;
 const isqrt=x=>Math.floor(Math.sqrt(Math.max(0,x)));
 function escapeHTML(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 
@@ -149,8 +173,19 @@ function connectCloud(){
     currentRef=fbDb.ref('mesas/'+room+'/jogadores');
     currentRef.on('value',snap=>{setStatus('ao vivo · mesa '+room,true);render(snap.val()||{});},
       err=>{setStatus('erro: '+err.message,false);});
+    if(gmRef)gmRef.off();
+    gmRef=fbDb.ref('mesas/'+room+'/mestre');
+    gmRef.on('value',snap=>renderGm(snap.val()));
   }catch(e){setStatus('erro de conexão',false);alert('Falha: '+e.message);}
 }
+/* ---------- trackers do Mestre (XP + colapso), salvos em mesas/<sala>/mestre ---------- */
+function renderGm(data){
+  if(data){gmState=Object.assign({colapso:0},data);}
+  const pc=document.getElementById('gmColapso');
+  if(pc){let h='';for(let i=1;i<=COL_PIPS;i++){const on=(gmState.colapso||0)>=i;h+=`<div class="colpip ${on?'on':''}" title="Colapso ${i}/${COL_PIPS}" onclick="setColapso(${(gmState.colapso||0)===i?i-1:i})"></div>`;}pc.innerHTML=h;}
+}
+function pushGm(){ if(gmRef)gmRef.set(gmState); }
+function setColapso(n){ gmState.colapso=Math.max(0,Math.min(COL_PIPS,n)); renderGm(); pushGm(); }
 
 function cardStats(c){
   const dmg=(c.d1||c.d2||c.d3)?`<span class="dmg">${c.d1||0}/${c.d2||0}/${c.d3||0}</span>${c.attr?' ['+c.attr+']':''} `:'';
@@ -172,8 +207,17 @@ function resHTML(p,psLivre){
   const boxes=BOXES.filter(([k])=>p.boxes&&p.boxes[k]>0)
     .map(([k,nome,cor])=>`<span class="boxtag" style="border-color:${cor};color:${cor}">${nome} ×${p.boxes[k]}</span>`).join('');
   const gold=`<span class="goldtag">🪙 ${p.gold||0}</span>`;
+  const paT=`<span class="patag" title="Audiência acumulada (só sobe)">📣 ${p.pa||0} PA</span>`;
   const ps=`<span class="pstag">✨ ${psLivre||0} PS</span>`;
-  return `<div class="restline">${gold}${ps}${boxes}</div>`;
+  return `<div class="restline">${gold}${paT}${ps}${boxes}</div>`;
+}
+function companHTML(cs){
+  if(!cs||!cs.length)return '';
+  const rows=cs.map(c=>{
+    const hp=(c.hp!=null?c.hp:'?'), hpm=(c.hpMax!=null?c.hpMax:'?');
+    return `<div class="compan-row"><span class="cnm">${escapeHTML(c.name||'(companheiro)')}</span><span class="chpc">❤ ${hp}/${hpm}</span>${c.note?`<span class="cnt">${escapeHTML(c.note)}</span>`:''}</div>`;
+  }).join('');
+  return `<div class="eq-title" style="margin-top:10px">Companheiros (${cs.length})</div><div class="compan-wrap">${rows}</div>`;
 }
 function render(data){
   lastData=data||{};
@@ -186,8 +230,10 @@ function render(data){
   wrap.innerHTML=ids.map(id=>{
     const p=data[id]; const at=p.attr||{FOR:1,DEX:1,CON:1,INT:1,CHA:1}; const cards=p.cards||{};
     let defBonus=0;Object.values(cards).forEach(c=>defBonus+=(+c.def||0));
-    const hp=8+(at.CON||1)*3, manaMax=(p.pmMax!=null?p.pmMax:(at.INT||1)*3), def=isqrt(at.DEX||1)+defBonus, ini=isqrt(at.DEX||1);
+    const hpMax=(p.hpMax!=null?p.hpMax:8+(at.CON||1)*3), manaMax=(p.pmMax!=null?p.pmMax:(at.INT||1)*3), def=isqrt(at.DEX||1)+defBonus, ini=isqrt(at.DEX||1);
+    const hpCur=(p.hpCur!=null?p.hpCur:hpMax);
     const pmCur=(p.pmCur!=null?p.pmCur:manaMax);
+    const hpLow=hpCur<=hpMax*0.34;
     const u=unarmedCalc(at,cards);
     const psLivre=(p.psTotal||0)-psSpentCalc(p.skills);
     const stale=(now-(p.updatedAt||0))>120000; // sem update há 2 min
@@ -200,12 +246,12 @@ function render(data){
     }).join('') || '<div class="empty-eq">Nenhum item equipado.</div>';
     const upd=p.updatedAt?new Date(p.updatedAt).toLocaleTimeString('pt-BR'):'—';
     return `<div class="pcard ${stale?'stale':''}">
-      <div class="phead"><div class="pname">${escapeHTML(p.name||'(sem nome)')}</div><div class="plvl">Nível ${p.level||1}</div></div>
+      <div class="phead"><div class="pname">${escapeHTML(p.name||'(sem nome)')}</div><div class="plvl">Nível ${p.level||1} · XP ${p.xp||0}</div></div>
       <div class="pattrs">
         ${['FOR','DEX','CON','INT','CHA'].map(k=>`<span class="pa">${k} <b>${at[k]||1}</b></span>`).join('')}
       </div>
       <div class="pstats">
-        <div class="ps"><div class="k">HP máx</div><div class="v">${hp}</div></div>
+        <div class="ps"><div class="k">HP</div><div class="v" style="color:${hpLow?'#ff4d4d':'#ff8a8a'}">${hpCur}/${hpMax}</div></div>
         <div class="ps"><div class="k">PM</div><div class="v" style="color:#7fb0ff">${pmCur}/${manaMax}</div></div>
         <div class="ps def"><div class="k">Defesa</div><div class="v">${def}</div></div>
         <div class="ps"><div class="k">Inic.</div><div class="v">+${ini}</div></div>
@@ -216,6 +262,7 @@ function render(data){
       <div class="eqlist">${eq}</div>
       <div class="eq-title" style="margin-top:10px">Skills (${(p.skills||[]).length})</div>
       ${skillsHTML(p.skills)}
+      ${companHTML(p.companions)}
       ${invHTML(p.inventory)}
       <div class="updated">atualizado ${upd}${stale?' (inativo)':''}</div>
     </div>`;
@@ -223,6 +270,7 @@ function render(data){
 }
 
 function init(){
+  renderGm();
   const room=localStorage.getItem(ROOMKEY); if(room)document.getElementById('roomCode').value=room;
   if(room&&localStorage.getItem(FBKEY))connectCloud();
 }
