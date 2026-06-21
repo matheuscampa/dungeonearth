@@ -481,7 +481,20 @@ const TRACK = {
   NEU:{cor:'var(--t-NEU)',nome:'Neutra'}
 };
 
-const KEY='dcc_dashboard_v2', CATKEY='dcc_catalog_v2', URLKEY='dcc_catalog_url';
+// === Identidade do jogador pela URL (?pid=) — definida ANTES de tudo ===
+const PIDKEY='dcc_player_id';
+const URLP=new URLSearchParams(location.search);
+const URL_MESA=(URLP.get('mesa')||'').trim();
+const URL_PID=(URLP.get('pid')||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
+let playerId;
+if(URL_PID){ playerId='pid-'+URL_PID; localStorage.setItem(PIDKEY,playerId); }
+else { playerId=localStorage.getItem(PIDKEY); if(!playerId){playerId='p_'+Math.random().toString(36).slice(2,9);localStorage.setItem(PIDKEY,playerId);} }
+// "Dono" deste navegador = o primeiro jogador que o usou. Se abrir o link de OUTRO jogador, avisamos (sem bloquear).
+let DEVICE_OWNER=localStorage.getItem('dcc_device_owner');
+if(!DEVICE_OWNER && URL_PID){ DEVICE_OWNER=playerId; localStorage.setItem('dcc_device_owner',DEVICE_OWNER); }
+const FOREIGN_SHEET = !!(URL_PID && DEVICE_OWNER && DEVICE_OWNER!==playerId);
+// A ficha é salva SEPARADA por jogador (pid): abrir o link de outro jogador NUNCA mistura nem sobrescreve fichas.
+const KEY='dcc_dashboard_v2__'+playerId, CATKEY='dcc_catalog_v2', URLKEY='dcc_catalog_url';
 const SKILLCATKEY='dcc_skillcat_v1', SKILLURLKEY='dcc_skillcat_url';
 let state = load() || {name:'',level:1,attr:{FOR:1,DEX:1,CON:1,INT:1,CHA:1},cards:{},inventory:[],gold:0,boxes:{bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0},skills:[],psTotal:2,pmCur:3,hpCur:11,pa:0,xp:0,companions:[]};
 if(!state.inventory)state.inventory=[];
@@ -500,15 +513,9 @@ let skillFilter='ALL';
 let editing=null, tab='cat', modalMode='slot';
 
 /* ---------- Firebase: sincronização ao vivo ---------- */
-const FBKEY='dcc_fb_cfg', ROOMKEY='dcc_room', PIDKEY='dcc_player_id';
+const FBKEY='dcc_fb_cfg', ROOMKEY='dcc_room';
 let fbApp=null, fbDb=null;
-// parâmetros da URL: ?mesa=<codigo>&pid=<seu-id>  (link pessoal da ficha)
-const URLP=new URLSearchParams(location.search);
-const URL_MESA=(URLP.get('mesa')||'').trim();
-const URL_PID=(URLP.get('pid')||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
-let playerId;
-if(URL_PID){ playerId='pid-'+URL_PID; localStorage.setItem(PIDKEY,playerId); }
-else { playerId=localStorage.getItem(PIDKEY); if(!playerId){playerId='p_'+Math.random().toString(36).slice(2,9);localStorage.setItem(PIDKEY,playerId);} }
+// (a identidade do jogador — PIDKEY, URL_MESA, URL_PID, playerId — já foi definida no topo do script)
 
 function toggleCfg(){const b=document.getElementById('cfgbar');b.style.display=(b.style.display==='none'?'flex':'none');}
 function parseCfg(raw){
@@ -1146,6 +1153,14 @@ async function init(){
   document.getElementById('pa').value=state.pa||0;
   document.getElementById('xp').value=state.xp||0;
   renderAttrs();
+  // aviso: este é o link de outro jogador neste navegador
+  if(FOREIGN_SHEET){
+    let b=document.getElementById('foreignWarn');
+    if(!b){b=document.createElement('div');b.id='foreignWarn';
+      b.style.cssText='position:sticky;top:0;z-index:9999;background:#5a1a1a;color:#ffd9d9;border-bottom:2px solid #ff5d5d;padding:8px 14px;font:600 13px system-ui;text-align:center';
+      document.body.prepend(b);}
+    b.innerHTML='⚠ Esta é a ficha de <b>'+escapeHTML(URL_PID)+'</b> — outro jogador. Você abriu o link dele neste navegador. <b>Não edite</b> aqui, ou vai alterar a ficha dele. Use o SEU próprio link.';
+  }
   // reconecta à mesa automaticamente, se já configurado (o ?mesa= da URL tem prioridade)
   if(URL_MESA)localStorage.setItem(ROOMKEY,URL_MESA);
   const savedRoom=localStorage.getItem(ROOMKEY);

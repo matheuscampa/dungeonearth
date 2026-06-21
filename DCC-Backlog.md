@@ -50,6 +50,13 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
 - [ ] **P2 — Mais conquistas** por andar/feito (deck cresce com a campanha).
 
 ### Dashboard / fichas digitais
+- [ ] **P1 — Banco de pontos de atributo não usados.** Campo na ficha (dashboard + ficha impressa) para guardar **pontos de atributo ganhos mas ainda não distribuídos** — o jogador acumula ao subir de nível / por recompensas e gasta quando quiser. Definir: quantos pontos por nível, se há trava por andar, e refletir o saldo no Painel do Mestre.
+- [ ] **P1 — Troca de itens entre jogadores da mesa.** Permitir transferir cartas/itens (e talvez ouro) de uma ficha para outra via Firebase, sem copiar/colar manual. Definir: fluxo de oferta→aceite, alcance (precisa estar na mesma cena/Sala Segura?), e o que pode ou não ser trocado.
+- [ ] **P1 — Atualizar o XP ao subir de nível.** Hoje o XP é um campo solto. Ao bater o alvo (`50×nível`), o dashboard deve **subir o nível e debitar/zerar o XP** automaticamente (ou avisar), em vez de o jogador fazer a conta na mão. Mostrar barra de progresso até o próximo nível.
+- [ ] **P1 — Lista de Conquistas no dashboard.** Trazer o deck de conquistas (hoje só em PDF) para dentro da ficha digital — exibir as do andar, marcar as desbloqueadas, e somar o XP/loot ao concedê-las. Idealmente o Mestre marca e sincroniza via Firebase.
+- [ ] **P1 — Busca e filtro por raridade no catálogo.** Campo de **pesquisa por nome** e **filtro por raridade** (e talvez por slot/tipo) ao escolher itens no dashboard — hoje a lista é só rolar. Mesma ideia para as skills.
+- [ ] **P1 — Total de pontos de atributo disponíveis.** Mostrar na ficha o **total de pontos que o jogador tem para distribuir** (calculado a partir do nível + bônus), não só o saldo não usado — para ele saber quanto pode alocar. Liga-se ao "Banco de pontos de atributo não usados".
+- [ ] **P1 — Loot automático das Caixas.** O dashboard **rola a Tabela de Loot sozinho** ao abrir uma Caixa (do tier certo) e mostra o resultado; o jogador só **confirma e adiciona ao inventário**. Tira a rolagem manual em `DCC-Tabela-Loot.pdf`. Definir: animação/registro, e regras especiais das Caixas de Patrocínio (sem sucata, +1 raridade, rola 2× e escolhe).
 - **Fichas na nuvem acessíveis por URL** — em duas partes:
   - [x] **Parte B (carregar por URL)** — o dashboard lê `?mesa=...&pid=...`, usa o `pid` como identidade fixa, conecta sozinho e **puxa a ficha salva no Firebase** ao abrir + botão "☁ Puxar ficha". Feito.
   - [x] **Sincronização "mais recente vence"** — ao abrir em qualquer lugar, compara `updatedAt` local x nuvem e carrega a versão mais nova (não sobrescreve mais a nuvem com uma ficha antiga). Feito e testado.
