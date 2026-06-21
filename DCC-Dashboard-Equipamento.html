@@ -1026,7 +1026,17 @@ function renderPm(){
 }
 
 /* ---------- init ---------- */
+// ---- padrões da mesa (para o link pessoal funcionar com 1 clique) ----
+const DEFAULT_FB_CFG={apiKey:"AIzaSyCWfU58HVTvLK4ej5yDH06mr2CQtxsde-8",authDomain:"dungeonearth.firebaseapp.com",databaseURL:"https://dungeonearth-default-rtdb.firebaseio.com",projectId:"dungeonearth",storageBucket:"dungeonearth.firebasestorage.app",messagingSenderId:"528605528507",appId:"1:528605528507:web:8bf62f719a9e773607449e",measurementId:"G-6C91MQ4W56"};
+const DEFAULT_CAT_URL="https://raw.githubusercontent.com/matheuscampa/dungeonearth/refs/heads/main/DCC-Catalogo-Itens.json";
+const DEFAULT_SKILL_URL="https://raw.githubusercontent.com/matheuscampa/dungeonearth/refs/heads/main/DCC-Catalogo-Skills.json";
+function applyDefaults(){
+  if(!localStorage.getItem(FBKEY)) localStorage.setItem(FBKEY,JSON.stringify(DEFAULT_FB_CFG));
+  if(!localStorage.getItem(URLKEY)) localStorage.setItem(URLKEY,DEFAULT_CAT_URL);
+  if(!localStorage.getItem(SKILLURLKEY)) localStorage.setItem(SKILLURLKEY,DEFAULT_SKILL_URL);
+}
 async function init(){
+  applyDefaults();
   // normaliza fichas antigas/importadas
   if(!state.inventory)state.inventory=[];
   if(state.gold==null)state.gold=0;
