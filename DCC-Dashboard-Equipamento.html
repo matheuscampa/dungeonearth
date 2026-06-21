@@ -515,12 +515,14 @@ function applyCloud(data){
   document.getElementById('psTotal').value=(state.psTotal!=null?state.psTotal:2);
   renderAttrs(); updateAttrSqrt(); render();
 }
-function cloudSyncOnConnect(){ // ao conectar: puxa a própria ficha se a local estiver vazia; senão publica a local
+function cloudSyncOnConnect(){ // ao conectar: a versão MAIS RECENTE vence (por updatedAt)
   if(!fbDb)return;
   const room=localStorage.getItem(ROOMKEY); if(!room)return;
   fbDb.ref('mesas/'+room+'/jogadores/'+playerId).once('value').then(snap=>{
     const data=snap.val();
-    if(data && isDefaultSheet()){ applyCloud(data); } else { pushCloud(); }
+    const localT=state.updatedAt||0, cloudT=(data&&data.updatedAt)||0;
+    if(data && (cloudT>localT || isDefaultSheet())){ applyCloud(data); } // nuvem mais nova (ou local vazia) → carrega
+    else { pushCloud(); }                                               // local mais nova (ou sem nuvem) → publica
   }).catch(()=>{try{pushCloud();}catch(e){}});
 }
 function pullCloud(){ // botão "Puxar ficha" — recuperação manual
@@ -537,10 +539,10 @@ function pushCloud(){
   if(!fbDb)return;
   const room=localStorage.getItem(ROOMKEY); if(!room)return;
   fbDb.ref('mesas/'+room+'/jogadores/'+playerId).set({
-    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),updatedAt:Date.now()
+    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),updatedAt:state.updatedAt||Date.now()
   });
 }
-function persistState(){localStorage.setItem(KEY,JSON.stringify(state));pushCloud();}
+function persistState(){state.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(state));pushCloud();}
 
 function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
 function loadCatalog(){try{return JSON.parse(localStorage.getItem(CATKEY))}catch(e){return null}}
