@@ -84,6 +84,52 @@
   .colpips{display:flex;gap:4px}
   .colpip{width:16px;height:16px;border-radius:4px;border:1px solid var(--line);background:#11141a;cursor:pointer}
   .colpip.on{background:#ff5d5d;border-color:#ff5d5d}
+  /* abas */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tab-btn{padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;background:var(--panel);border:1px solid var(--line);color:var(--dim)}
+  .tab-btn.active{background:var(--accent);border-color:var(--accent);color:#1a1206}
+  .tab{display:none} .tab.active{display:block}
+  /* fichas ocultas */
+  .hidebar{font-size:11px;color:var(--dim);margin:-6px 0 12px}
+  .hidebar a{color:var(--accent2);cursor:pointer;text-decoration:underline}
+  .hide-x{cursor:pointer;border:1px solid var(--line);background:#11141a;color:var(--dim);border-radius:6px;
+    font-size:12px;line-height:1;padding:3px 7px;margin-left:6px}
+  .hide-x:hover{border-color:#ff5d5d;color:#ff8a8a}
+  /* filtros/busca dos navegadores */
+  .browser{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .filters input[type=text]{flex:1;min-width:180px;background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:7px;padding:7px 10px;font-size:13px}
+  .chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);cursor:pointer}
+  .chip.on{background:var(--accent2);border-color:var(--accent2);color:#1a1206}
+  .browser .count{font-size:11px;color:var(--dim);margin-bottom:8px}
+  .blist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+  .brow{background:var(--panel2);border:1px solid var(--line);border-left-width:3px;border-radius:7px;padding:8px 10px}
+  .brow .bn{font-size:13px;font-weight:700}
+  .brow .bt{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
+  .brow .bs{font-size:11px;margin-top:4px}
+  .brow .bs .dmg{color:var(--accent2)} .brow .bs .def{color:#7fd1ff} .brow .bs .dt{color:var(--accent)}
+  .brow .bd{font-size:11px;color:#c2c8d2;margin-top:5px;line-height:1.35}
+  .brow .bev{font-size:10.5px;color:var(--dim);margin-top:3px}
+  /* monstros */
+  .mon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .mon{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden}
+  .mon .top{padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:800;color:#0b0d12}
+  .mon .body{padding:10px 12px}
+  .mon .mstats{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;font-weight:700;margin-bottom:6px}
+  .mon .mhp{color:#ff8a8a}.mon .mdef{color:#7fd1ff}.mon .mprec{color:var(--accent2)}.mon .mxp{color:#7be07b}
+  .mon .matk{font-size:12px;margin-bottom:6px}.mon .matk .d{color:var(--accent2);font-weight:700}
+  .mon .mesp{font-size:11px;color:#c2c8d2;line-height:1.35;margin-bottom:5px}
+  .mon .mloot{font-size:11px;color:var(--accent2)}
+  .mon .mflv{font-size:10.5px;color:var(--dim);font-style:italic;margin-top:5px;border-top:1px solid var(--line);padding-top:5px}
+  /* tooltip */
+  #tip{position:fixed;z-index:99999;max-width:320px;background:#0a0c11;border:1px solid var(--accent);
+    border-radius:9px;padding:9px 11px;box-shadow:0 8px 26px rgba(0,0,0,.6);pointer-events:none;display:none}
+  #tip .tn{font-size:13px;font-weight:800;color:#fff}
+  #tip .tt{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+  #tip .ts{font-size:11px;margin-top:5px} #tip .ts .dmg{color:var(--accent2)} #tip .ts .dt{color:var(--accent)}
+  #tip .td{font-size:11.5px;color:#d6dbe3;margin-top:6px;line-height:1.4}
+  #tip .te{font-size:11px;color:#b9c0cc;margin-top:4px;line-height:1.35}
+  .hoverable{cursor:help}
 </style>
 </head>
 <body>
@@ -111,8 +157,84 @@
     <div class="gmbox"><span class="lbl" style="color:var(--dim)">XP é individual — controle pelo card de cada jogador (campo XP).</span></div>
   </div>
 
-  <div class="players" id="players"><div class="nobody">Conecte-se a uma mesa para ver os crawlers.</div></div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="jogadores" onclick="showTab('jogadores')">👥 Jogadores</button>
+    <button class="tab-btn" data-tab="monstros" onclick="showTab('monstros')">🐲 Monstros</button>
+    <button class="tab-btn" data-tab="skills" onclick="showTab('skills')">✨ Skills</button>
+    <button class="tab-btn" data-tab="itens" onclick="showTab('itens')">🎒 Itens</button>
+    <button class="tab-btn" data-tab="conquistas" onclick="showTab('conquistas')">🏆 Conquistas</button>
+  </div>
+
+  <div class="tab active" id="tab-jogadores">
+    <div class="hidebar" id="hidebar"></div>
+    <div class="players" id="players"><div class="nobody">Conecte-se a uma mesa para ver os crawlers.</div></div>
+  </div>
+
+  <div class="tab" id="tab-monstros">
+    <div class="browser">
+      <div class="filters">
+        <input type="text" id="monSearch" placeholder="Buscar monstro…" oninput="renderMonsters()">
+        <span class="chip on" data-tier="" onclick="setMonTier(this,'')">Todos</span>
+        <span class="chip" data-tier="Lacaio" onclick="setMonTier(this,'Lacaio')">Lacaio</span>
+        <span class="chip" data-tier="Padrão" onclick="setMonTier(this,'Padrão')">Padrão</span>
+        <span class="chip" data-tier="Elite" onclick="setMonTier(this,'Elite')">Elite</span>
+        <span class="chip" data-tier="Chefe" onclick="setMonTier(this,'Chefe')">Chefe</span>
+      </div>
+      <div class="count" id="monCount"></div>
+      <div class="mon-grid" id="monGrid"></div>
+    </div>
+  </div>
+
+  <div class="tab" id="tab-skills">
+    <div class="browser">
+      <div class="filters">
+        <input type="text" id="skSearch" placeholder="Buscar skill…" oninput="renderSkillBrowser()">
+        <span class="chip on" data-tr="" onclick="setSkTrack(this,'')">Todas</span>
+        <span class="chip" data-tr="FOR" onclick="setSkTrack(this,'FOR')">FOR</span>
+        <span class="chip" data-tr="DEX" onclick="setSkTrack(this,'DEX')">DEX</span>
+        <span class="chip" data-tr="INT" onclick="setSkTrack(this,'INT')">INT</span>
+        <span class="chip" data-tr="CHA" onclick="setSkTrack(this,'CHA')">CHA</span>
+        <span class="chip" data-tr="NEU" onclick="setSkTrack(this,'NEU')">NEU</span>
+      </div>
+      <div class="count" id="skCount">Carregando catálogo de skills…</div>
+      <div class="blist" id="skList"></div>
+    </div>
+  </div>
+
+  <div class="tab" id="tab-itens">
+    <div class="browser">
+      <div class="filters">
+        <input type="text" id="itSearch" placeholder="Buscar item…" oninput="renderItemBrowser()">
+        <select id="itSlot" onchange="renderItemBrowser()" style="background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:7px;padding:7px 8px;font-size:12px"></select>
+      </div>
+      <div class="filters" id="itRarChips">
+        <span class="chip on" data-rar="" onclick="setItRar(this,'')">Todas raridades</span>
+        <span class="chip" data-rar="comum" onclick="setItRar(this,'comum')">Comum</span>
+        <span class="chip" data-rar="incomum" onclick="setItRar(this,'incomum')">Incomum</span>
+        <span class="chip" data-rar="raro" onclick="setItRar(this,'raro')">Raro</span>
+        <span class="chip" data-rar="epico" onclick="setItRar(this,'epico')">Épico</span>
+        <span class="chip" data-rar="lendario" onclick="setItRar(this,'lendario')">Lendário</span>
+        <span class="chip" data-rar="celestial" onclick="setItRar(this,'celestial')">Celestial</span>
+      </div>
+      <div class="count" id="itCount">Carregando catálogo de itens…</div>
+      <div class="blist" id="itList"></div>
+    </div>
+  </div>
+
+  <div class="tab" id="tab-conquistas">
+    <div class="browser">
+      <div class="filters">
+        <input type="text" id="achSearch" placeholder="Buscar conquista…" oninput="renderAchBoard()">
+        <select id="achAndar" onchange="renderAchBoard()" style="background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:7px;padding:7px 8px;font-size:12px">
+          <option value="">Todos os andares</option><option value="1">Andar 1</option>
+        </select>
+      </div>
+      <div class="count" id="achCount"></div>
+      <div class="blist" id="achList"></div>
+    </div>
+  </div>
 </div>
+<div id="tip"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -141,7 +263,7 @@ function skillsHTML(sks){
   return '<div class="sklist">'+sks.map(s=>{
     const cor=TRACK[s.track]||TRACK.NEU;
     const cost=s.passiva?'Passiva':([(+s.pm>0?'PM'+s.pm:''),(+s.cd>0?'CD'+s.cd:''),(s.recargaEsp?'Rec':'')].filter(Boolean).join('·')||'livre');
-    return `<div class="skrow"><span class="nm" style="border-left:3px solid ${cor}">${escapeHTML(s.name)}</span><span class="rk">R${s.rank||1} · ${cost}</span></div>`;
+    return `<div class="skrow hoverable" data-tipkind="skill" data-tipid="${s.id||''}" data-tipname="${escapeHTML(s.name)}" data-tiprank="${s.rank||1}"><span class="nm" style="border-left:3px solid ${cor}">${escapeHTML(s.name)}</span><span class="rk">R${s.rank||1} · ${cost}</span></div>`;
   }).join('')+'</div>';
 }
 const SLOTLABEL={maoE:'Mão Esq.',maoD:'Mão Dir.',cabeca:'Cabeça',camiseta:'Camiseta',armadura:'Armadura',roupabaixo:'R. Baixo',calca:'Calça',calcado:'Calçado',acc1:'Acess. 1',acc2:'Acess. 2',acc3:'Acess. 3',acc4:'Acess. 4',acc5:'Acess. 5'};
@@ -176,6 +298,7 @@ function connectCloud(){
     if(gmRef)gmRef.off();
     gmRef=fbDb.ref('mesas/'+room+'/mestre');
     gmRef.on('value',snap=>renderGm(snap.val()));
+    pushOcultos();
   }catch(e){setStatus('erro de conexão',false);alert('Falha: '+e.message);}
 }
 /* ---------- trackers do Mestre (XP + colapso), salvos em mesas/<sala>/mestre ---------- */
@@ -198,7 +321,7 @@ function invHTML(inv){
   if(!inv||!inv.length)return '';
   const itens=inv.map(it=>{
     const cor=RAR[it.rar]||RAR.comum; const q=it.qty||1;
-    return `<span class="invtag" style="border-left-color:${cor}">${escapeHTML(it.name||'?')}${q>1?' ×'+q:''}</span>`;
+    return `<span class="invtag hoverable" data-tipkind="item" data-tipid="${it.id||''}" data-tipname="${escapeHTML(it.name||'')}" style="border-left-color:${cor}">${escapeHTML(it.name||'?')}${q>1?' ×'+q:''}</span>`;
   }).join('');
   const totQ=inv.reduce((a,b)=>a+(b.qty||1),0);
   return `<div class="eq-title" style="margin-top:10px">Inventário (${totQ})</div><div class="invtags">${itens}</div>`;
@@ -219,11 +342,21 @@ function companHTML(cs){
   }).join('');
   return `<div class="eq-title" style="margin-top:10px">Companheiros (${cs.length})</div><div class="compan-wrap">${rows}</div>`;
 }
+function renderHidebar(data){
+  const bar=document.getElementById('hidebar');
+  const hids=[...hidden].filter(id=>data[id]);
+  if(!hids.length){bar.innerHTML='';return;}
+  const names=hids.map(id=>escapeHTML(data[id].name||id)).join(', ');
+  bar.innerHTML='Fichas ocultas ('+hids.length+'): '+names+' — <a onclick="unhideAll()">mostrar todas</a>';
+}
 function render(data){
   lastData=data||{};
   const wrap=document.getElementById('players');
-  const ids=Object.keys(data);
-  if(!ids.length){wrap.innerHTML='<div class="nobody">Ninguém conectado ainda nesta mesa.</div>';return;}
+  const allIds=Object.keys(data);
+  renderHidebar(data);
+  const ids=allIds.filter(id=>!hidden.has(id));
+  if(!allIds.length){wrap.innerHTML='<div class="nobody">Ninguém conectado ainda nesta mesa.</div>';return;}
+  if(!ids.length){wrap.innerHTML='<div class="nobody">Todas as fichas estão ocultas. Clique em "mostrar todas" acima.</div>';return;}
   // ordena por nome
   ids.sort((a,b)=>(data[a].name||'').localeCompare(data[b].name||''));
   const now=Date.now();
@@ -239,14 +372,14 @@ function render(data){
     const stale=(now-(p.updatedAt||0))>120000; // sem update há 2 min
     const eq=SLOTORDER.filter(s=>cards[s]).map(s=>{
       const c=cards[s]; const cor=RAR[c.rar]||RAR.comum;
-      return `<div class="eq" style="border-left-color:${cor}">
+      return `<div class="eq hoverable" data-tipkind="item" data-tipid="${c.id||''}" data-tipname="${escapeHTML(c.name||'')}" style="border-left-color:${cor}">
         <div class="slot">${SLOTLABEL[s]}</div>
         <div class="nm">${escapeHTML(c.name||'')}</div>
         <div class="st">${cardStats(c)}${c.twoHand?' · 2 mãos':''}</div></div>`;
     }).join('') || '<div class="empty-eq">Nenhum item equipado.</div>';
     const upd=p.updatedAt?new Date(p.updatedAt).toLocaleTimeString('pt-BR'):'—';
     return `<div class="pcard ${stale?'stale':''}">
-      <div class="phead"><div class="pname">${escapeHTML(p.name||'(sem nome)')}</div><div class="plvl">Nível ${p.level||1} · XP ${p.xp||0}</div></div>
+      <div class="phead"><div class="pname">${escapeHTML(p.name||'(sem nome)')}</div><div style="display:flex;align-items:center;gap:6px"><div class="plvl">Nível ${p.level||1} · XP ${p.xp||0}</div><span class="hide-x" title="Ocultar esta ficha da visualização" onclick="hidePlayer('${id}')">✕</span></div></div>
       <div class="pattrs">
         ${['FOR','DEX','CON','INT','CHA'].map(k=>`<span class="pa">${k} <b>${at[k]||1}</b></span>`).join('')}
       </div>
@@ -267,10 +400,213 @@ function render(data){
       <div class="updated">atualizado ${upd}${stale?' (inativo)':''}</div>
     </div>`;
   }).join('');
+  renderAchBoard();
 }
+
+/* ===================== Abas ===================== */
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.id==='tab-'+name));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+}
+
+/* ===================== Fichas ocultas ===================== */
+const HIDEKEY='dcc_mestre_hidden';
+let hidden=new Set(JSON.parse(localStorage.getItem(HIDEKEY)||'[]'));
+function saveHidden(){localStorage.setItem(HIDEKEY,JSON.stringify([...hidden]));}
+function pushOcultos(){ // publica a lista de removidos para que as fichas não os ofereçam como destino de itens
+  if(!fbDb)return; const room=localStorage.getItem(ROOMKEY); if(!room)return;
+  fbDb.ref('mesas/'+room+'/ocultos').set([...hidden].reduce((o,id)=>(o[id]=true,o),{}));
+}
+function hidePlayer(id){hidden.add(id);saveHidden();pushOcultos();render(lastData);}
+function unhideAll(){hidden.clear();saveHidden();pushOcultos();render(lastData);}
+
+/* ===================== Catálogos (itens + skills) ===================== */
+const CAT_ITENS_URL="https://raw.githubusercontent.com/matheuscampa/dungeonearth/refs/heads/main/DCC-Catalogo-Itens.json";
+const CAT_SKILLS_URL="https://raw.githubusercontent.com/matheuscampa/dungeonearth/refs/heads/main/DCC-Catalogo-Skills.json";
+let ITEM_CAT=[], SKILL_CAT=[], ITEM_BY_ID={}, ITEM_BY_NAME={}, SKILL_BY_ID={}, SKILL_BY_NAME={};
+const norm=s=>(s||'').toString().trim().toLowerCase();
+function indexCats(){
+  ITEM_BY_ID={};ITEM_BY_NAME={};SKILL_BY_ID={};SKILL_BY_NAME={};
+  ITEM_CAT.forEach(i=>{if(i.id)ITEM_BY_ID[i.id]=i;ITEM_BY_NAME[norm(i.name)]=i;});
+  SKILL_CAT.forEach(s=>{if(s.id)SKILL_BY_ID[s.id]=s;SKILL_BY_NAME[norm(s.name)]=s;});
+}
+async function loadCats(){
+  try{const r=await fetch(CAT_ITENS_URL,{cache:'no-store'});if(r.ok){const d=await r.json();ITEM_CAT=d.itens||d||[];}}catch(e){}
+  try{const r=await fetch(CAT_SKILLS_URL,{cache:'no-store'});if(r.ok){const d=await r.json();SKILL_CAT=d.skills||d||[];}}catch(e){}
+  indexCats(); buildItemSlotOptions(); renderSkillBrowser(); renderItemBrowser();
+}
+
+/* ===================== Monstros (embutido — Bestiário Andar 1) ===================== */
+const TIERCOL={Lacaio:'#9aa0a6','Padrão':'#4caf50',Elite:'#b14cff',Chefe:'#ff9800'};
+const XP_TIER={Lacaio:5,'Padrão':10,Elite:25,Chefe:80};
+const MONSTERS=[
+ {nome:"Rato Carniçal Mutante",tier:"Lacaio",nivel:1,hp:10,def:4,prec:2,atkNome:"Mordida",atk:"2 / 4 / 6",attr:"DEX",especial:"Matilha: aparece em grupos de 3–5. Cada rato adjacente a outro rato dá +1 de Precisão a ambos.",loot:"Caixa Bronze 15%",flavor:"Infestam os túneis do covil, gordos de comer as sobras dos goblins."},
+ {nome:"Barata Blindada",tier:"Lacaio",nivel:1,hp:14,def:6,prec:1,atkNome:"Ferrão",atk:"1 / 3 / 5",attr:"DEX",especial:"Carapaça: ignora a 1ª faixa Baixa de dano por turno. Armas Contundentes quebram a carapaça (ignoram isto).",loot:"— (5%)",flavor:"Os goblins as criam como bichinhos de estimação. E como petiscos."},
+ {nome:"Goblin Batedor",tier:"Lacaio",nivel:1,hp:12,def:6,prec:3,atkNome:"Estilingue",atk:"2 / 4 / 7",attr:"DEX",especial:"Bando covarde: atira de longe e recua. Vem em grupos de 3–6 e grita avisando o covil (chama reforços). +1 Precisão pelo flanco.",loot:"Caixa Bronze 20% · 1d6 ouro",flavor:"Pequeno, veloz e ruidoso. Morre fácil, mas nunca vem sozinho."},
+ {nome:"Goblin Lanceiro",tier:"Padrão",nivel:2,hp:22,def:7,prec:3,atkNome:"Lança",atk:"3 / 6 / 9",attr:"FOR",especial:"Alcance: ataca a 2 m. Parede de Escudos: enquanto adjacente a outro Lanceiro, ambos ganham +1 de Defesa.",loot:"Caixa Bronze 25%",flavor:"A infantaria do covil. Em formação, são surpreendentemente teimosos."},
+ {nome:"Goblin Fanático",tier:"Padrão",nivel:2,hp:20,def:4,prec:3,atkNome:"Cutelos Duplos",atk:"3 / 6 / 10",attr:"FOR",especial:"Frenesi: ao cair abaixo de metade do HP entra em Fúria (+1 Mult de dano, −2 Defesa). Nunca recua.",loot:"Caixa Bronze 25% · 1d6 ouro",flavor:"Espuma na boca, olhos vermelhos, fé cega no Rei-Goblin."},
+ {nome:"Goblin Xamã",tier:"Padrão",nivel:3,hp:18,def:6,prec:2,atkNome:"Faísca Vodu",atk:"2 / 4 / 7",attr:"INT",especial:"Conjurador (prioridade de abate): a cada turno escolhe — CURAR um goblin em 8 HP OU amaldiçoar um herói (aplica Marcado).",loot:"Caixa Prata 25%",flavor:"Coberto de ossos, fetiches e tinta. Mantém o covil de pé com magia barata."},
+ {nome:"Goblin Bombista",tier:"Padrão",nivel:3,hp:16,def:5,prec:3,atkNome:"Bomba Caseira",atk:"3 / 6 / 11",attr:"FOR",especial:"Área: atinge todos a 2 m do alvo. Instável: ao morrer, explode causando 6 de dano a todos adjacentes.",loot:"Caixa Bronze 30%",flavor:"Carrega frascos que não deveriam existir e ri toda vez que algo explode."},
+ {nome:"Aranha das Túneis",tier:"Padrão",nivel:3,hp:18,def:7,prec:3,atkNome:"Picada",atk:"2 / 5 / 8",attr:"DEX",especial:"Veneno: em faixa Alta ou Crítico aplica Envenenado(2). Emboscada do teto: surpreende no 1º turno (ataque com +3).",loot:"Caixa Bronze 20%",flavor:"Tece nos tetos dos túneis. Os goblins a alimentam com prisioneiros."},
+ {nome:"Goblin Montado em Rato Gigante",tier:"Padrão",nivel:3,hp:30,def:6,prec:4,atkNome:"Investida de Lança",atk:"4 / 8 / 13",attr:"FOR",especial:"Cavalaria: se mover 4 m+ antes de atacar, +1 faixa e empurra. Ao reduzir a 0, o cavaleiro cai mas o Rato (HP 10, mordida 2/4/6) continua lutando.",loot:"Caixa Prata 25% · 2d6 ouro",flavor:"A 'elite montada' do covil: um goblin presunçoso em cima de um rato muito irritado."},
+ {nome:"Hobgoblin Carrasco",tier:"Elite",nivel:4,hp:44,def:8,prec:4,atkNome:"Machado Grande",atk:"5 / 9 / 15",attr:"FOR",especial:"Disciplinado: imune a Atordoado e a medo. Execução: contra alvo Derrubado ou abaixo de 1/4 do HP, o dano é DOBRADO.",loot:"Caixa Prata 40% · 3d6 ouro",flavor:"Maior, blindado e calado, comanda os goblins na marra. O verdadeiro músculo do andar."},
+ {nome:"GROZNAK, o Rei-Goblin",tier:"Chefe",nivel:5,hp:110,def:8,prec:5,atkNome:"Cutelo Real",atk:"5 / 10 / 16",attr:"FOR",especial:"Escudo de Lacaios: enquanto houver 1 goblin adjacente, ataques contra ele sofrem −1 faixa. Fase 1 (HP>50%): convoca 1d4 Batedores ou dá +2 Prec aos goblins. Fase 2 (HP≤50%): Fúria + ataca 2× por turno.",loot:"Caixa Prata/jogador · 1 item Raro · Coroa de Cone · Conquista Regicida",flavor:"O goblin mais gordo, velho e covarde do covil. Usa um cone de trânsito como coroa."},
+];
+let monTier='';
+function setMonTier(el,t){monTier=t;document.querySelectorAll('#tab-monstros .chip').forEach(c=>c.classList.toggle('on',c===el));renderMonsters();}
+function renderMonsters(){
+  const q=norm((document.getElementById('monSearch')||{}).value);
+  const list=MONSTERS.filter(m=>(!monTier||m.tier===monTier)&&(!q||norm(m.nome).includes(q)||norm(m.especial).includes(q)));
+  document.getElementById('monCount').textContent=list.length+' monstro(s)';
+  document.getElementById('monGrid').innerHTML=list.map(m=>{
+    const col=TIERCOL[m.tier]||'#888';
+    return `<div class="mon" style="border-color:${col}">
+      <div class="top" style="background:${col}"><span>${escapeHTML(m.nome)}</span><span>${m.tier.toUpperCase()} · Nv ${m.nivel}</span></div>
+      <div class="body">
+        <div class="mstats"><span class="mhp">HP ${m.hp}</span><span class="mdef">Def ${m.def}</span><span class="mprec">Prec +${m.prec}</span><span class="mxp">XP ${XP_TIER[m.tier]}</span></div>
+        <div class="matk">${escapeHTML(m.atkNome)}: <span class="d">${m.atk}</span> [${m.attr}]</div>
+        ${m.especial?`<div class="mesp"><b>Especial:</b> ${escapeHTML(m.especial)}</div>`:''}
+        <div class="mloot">Loot: ${escapeHTML(m.loot)}</div>
+        ${m.flavor?`<div class="mflv">${escapeHTML(m.flavor)}</div>`:''}
+      </div></div>`;
+  }).join('')||'<div class="nobody">Nenhum monstro encontrado.</div>';
+}
+
+/* ===================== Navegador de Skills ===================== */
+let skTrack='';
+function setSkTrack(el,t){skTrack=t;document.querySelectorAll('#tab-skills .chip').forEach(c=>c.classList.toggle('on',c===el));renderSkillBrowser();}
+function renderSkillBrowser(){
+  const box=document.getElementById('skList'); if(!box)return;
+  if(!SKILL_CAT.length){document.getElementById('skCount').textContent='Catálogo de skills ainda não carregou (precisa de internet).';box.innerHTML='';return;}
+  const q=norm((document.getElementById('skSearch')||{}).value);
+  const list=SKILL_CAT.filter(s=>(!skTrack||s.track===skTrack)&&(!q||norm(s.name).includes(q)||norm(s.desc).includes(q)));
+  document.getElementById('skCount').textContent=list.length+' de '+SKILL_CAT.length+' skills';
+  box.innerHTML=list.map(s=>{
+    const cor=TRACK[s.track]||TRACK.NEU;
+    const cost=s.passiva?'Passiva':[(+s.pm>0?'PM '+s.pm:''),(+s.cd>0?'CD '+s.cd:''),(s.recargaEsp?'Rec esp.':'')].filter(Boolean).join(' · ')||'Livre';
+    const dmg=(s.d1||s.d2||s.d3)?`<div class="bs"><span class="dmg">Dano ${s.d1||0}/${s.d2||0}/${s.d3||0}</span>${s.attr?' ['+s.attr+']':''}</div>`:'';
+    return `<div class="brow" style="border-left-color:${cor}">
+      <div class="bn">${escapeHTML(s.name)}</div><div class="bt">${s.track||'—'} · ${cost}</div>${dmg}
+      <div class="bd">${escapeHTML(s.desc||'')}</div>
+      ${s.r5?`<div class="bev"><b>R5:</b> ${escapeHTML(s.r5)}</div>`:''}
+      ${s.r10?`<div class="bev"><b>R10:</b> ${escapeHTML(s.r10)}</div>`:''}
+      ${s.r15?`<div class="bev"><b>R15:</b> ${escapeHTML(s.r15)}</div>`:''}
+    </div>`;
+  }).join('')||'<div class="nobody">Nenhuma skill encontrada.</div>';
+}
+
+/* ===================== Navegador de Itens ===================== */
+let itRar='';
+const SLOTLBL2={mao:'Mão (armas/escudos)',cabeca:'Cabeça',camiseta:'Camiseta',armadura:'Armadura',roupabaixo:'Roupa de baixo',calca:'Calça',calcado:'Calçado',acessorio:'Acessório',consumivel:'Consumível'};
+function buildItemSlotOptions(){
+  const sel=document.getElementById('itSlot'); if(!sel)return;
+  const slots=[...new Set(ITEM_CAT.map(i=>i.slot))];
+  sel.innerHTML='<option value="">Todos os tipos</option>'+slots.map(s=>`<option value="${s}">${SLOTLBL2[s]||s}</option>`).join('');
+}
+function setItRar(el,r){itRar=r;document.querySelectorAll('#itRarChips .chip').forEach(c=>c.classList.toggle('on',c===el));renderItemBrowser();}
+function renderItemBrowser(){
+  const box=document.getElementById('itList'); if(!box)return;
+  if(!ITEM_CAT.length){document.getElementById('itCount').textContent='Catálogo de itens ainda não carregou (precisa de internet).';box.innerHTML='';return;}
+  const q=norm((document.getElementById('itSearch')||{}).value);
+  const slot=(document.getElementById('itSlot')||{}).value||'';
+  const list=ITEM_CAT.filter(i=>(!itRar||i.rar===itRar)&&(!slot||i.slot===slot)&&(!q||norm(i.name).includes(q)||norm(i.fx).includes(q)||norm(i.type).includes(q)));
+  document.getElementById('itCount').textContent=list.length+' de '+ITEM_CAT.length+' itens';
+  box.innerHTML=list.map(i=>{
+    const cor=RAR[i.rar]||RAR.comum; const parts=[];
+    if(i.d1||i.d2||i.d3)parts.push(`<span class="dmg">Dano ${i.d1||0}/${i.d2||0}/${i.d3||0}</span>${i.attr?' ['+i.attr+']':''}`);
+    if(i.dtype)parts.push(`<span class="dt">${i.dtype}</span>`);
+    if(i.prec)parts.push(`Prec +${i.prec}`);
+    if(i.def)parts.push(`<span class="def">Def +${i.def}</span>`);
+    if(i.twoHand)parts.push('2 mãos');
+    return `<div class="brow" style="border-left-color:${cor}">
+      <div class="bn">${escapeHTML(i.name)}</div><div class="bt">${escapeHTML(i.type||'')} · ${i.rar}</div>
+      ${parts.length?`<div class="bs">${parts.join(' · ')}</div>`:''}
+      ${i.fx?`<div class="bd">${escapeHTML(i.fx)}</div>`:''}
+    </div>`;
+  }).join('')||'<div class="nobody">Nenhum item encontrado.</div>';
+}
+
+/* ===================== Conquistas (embutido) ===================== */
+const CONQUISTAS=[
+ {id:'primeiro-sangue',andar:1,nome:'Primeiro Sangue',cond:'Cause dano a um inimigo pela 1ª vez.',rec:'+10 XP · 1 Caixa Bronze'},
+ {id:'ainda-respirando',andar:1,nome:'Ainda Respirando',cond:'Sobreviva ao seu primeiro combate.',rec:'+10 XP · 10 ouro'},
+ {id:'maos-nuas',andar:1,nome:'Mãos Nuas, Coração Cheio',cond:'Vença um combate desarmado/improvisado.',rec:'+25 XP · Bandagens de Luta'},
+ {id:'dedetizador',andar:1,nome:'Dedetizador',cond:'Mate 10 inimigos no Andar 1.',rec:'+30 XP · 1 Caixa Bronze'},
+ {id:'silencio',andar:1,nome:'Silêncio!',cond:'Mate um Goblin Batedor antes do alarme.',rec:'+20 XP · 2d6 ouro'},
+ {id:'abre-casca',andar:1,nome:'Abre-Casca',cond:'Mate uma Barata Blindada com dano contundente.',rec:'+15 XP · 1 Caixa Bronze'},
+ {id:'mao-firme',andar:1,nome:'Mão Firme',cond:'Desarme uma armadilha sem dispará-la.',rec:'+20 XP · 1 Granada de Estilhaços'},
+ {id:'tecedora',andar:1,nome:'Tecedora Silenciada',cond:'Derrote a Aranha das Túneis.',rec:'+40 XP · 1 Caixa Prata'},
+ {id:'fregues-bopca',andar:1,nome:'Freguês do Bopca',cond:'Faça sua primeira compra na Sala Segura.',rec:'+10 XP · −5% no Bopca'},
+ {id:'papai-noel',andar:1,nome:'Papai Noel às Avessas',cond:'Abra suas primeiras Caixas de Loot.',rec:'+12 XP · 1 Caixa Bronze extra'},
+ {id:'abencoado-rng',andar:1,nome:'Abençoado pelo RNG',cond:'Tire um nat 20.',rec:'+15 XP · 1 Caixa Prata'},
+ {id:'palhaco',andar:1,nome:'Palhaço da Corte',cond:'Tire um nat 1 e sobreviva à falha.',rec:'+12 XP · +2 PA'},
+ {id:'cacador-bruxos',andar:1,nome:'Caçador de Bruxos',cond:'Mate o Goblin Xamã antes dos outros goblins.',rec:'+25 XP · 1 Caixa Bronze'},
+ {id:'carrasco-carrasco',andar:1,nome:'Carrasco do Carrasco',cond:'Derrote o Hobgoblin Carrasco.',rec:'+60 XP · 1 item Raro'},
+ {id:'na-trave',andar:1,nome:'Na Trave',cond:'Termine um combate com exatamente 1 HP.',rec:'+25 XP · 1 Poção de Cura'},
+ {id:'astro-nascente',andar:1,nome:'Astro Nascente',cond:'Acumule seus primeiros 5 PA.',rec:'+15 XP · 1 Caixa de Patrocínio'},
+ {id:'pe-de-meia',andar:1,nome:'Pé-de-Meia Real',cond:'Recolha todo o ouro do trono de Groznak.',rec:'+20 XP · 3d6 ouro'},
+ {id:'regicida',andar:1,nome:'Regicida',cond:'Derrote Groznak, o Rei-Goblin.',rec:'+120 XP · Título Regicida'},
+ {id:'coroado',andar:1,nome:'Coroado',cond:'Equipe a Coroa de Cone.',rec:'+10 XP · +3 PA'},
+ {id:'para-baixo',andar:1,nome:'Para Baixo é o Único Caminho',cond:'Desça para o Andar 2.',rec:'+80 XP · 1 Caixa Prata'},
+];
+function renderAchBoard(){
+  const box=document.getElementById('achList'); if(!box)return;
+  const q=norm((document.getElementById('achSearch')||{}).value);
+  const andar=(document.getElementById('achAndar')||{}).value||'';
+  const players=lastData||{};
+  const pids=Object.keys(players).filter(id=>!hidden.has(id));
+  const list=CONQUISTAS.filter(a=>(!andar||String(a.andar)===andar)&&(!q||norm(a.nome).includes(q)||norm(a.cond).includes(q)));
+  document.getElementById('achCount').textContent=list.length+' conquista(s) · '+pids.length+' jogador(es) na mesa';
+  box.innerHTML=list.map(a=>{
+    const got=pids.filter(id=>players[id].achievements&&players[id].achievements[a.id]);
+    const badges=got.length?got.map(id=>`<span class="patag" style="color:#7be07b">✔ ${escapeHTML(players[id].name||id)}</span>`).join(' '):'<span style="color:var(--dim);font-size:10.5px">ninguém ainda</span>';
+    return `<div class="brow" style="border-left-color:${got.length?'#4caf50':'#555'}">
+      <div class="bn">${escapeHTML(a.nome)} <span style="color:var(--dim);font-size:10px">· Andar ${a.andar}</span></div>
+      <div class="bd">${escapeHTML(a.cond)}</div>
+      <div class="bev">🎁 ${escapeHTML(a.rec)}</div>
+      <div class="bs" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">${badges}</div>
+    </div>`;
+  }).join('')||'<div class="nobody">Nenhuma conquista encontrada.</div>';
+}
+
+/* ===================== Tooltips (hover em skills/itens dos jogadores) ===================== */
+function tipEl(){return document.getElementById('tip');}
+function positionTip(x,y){const t=tipEl();const w=t.offsetWidth,h=t.offsetHeight;let nx=x+16,ny=y+16;if(nx+w>innerWidth)nx=x-w-16;if(ny+h>innerHeight)ny=y-h-16;t.style.left=Math.max(6,nx)+'px';t.style.top=Math.max(6,ny)+'px';}
+function showTip(html,x,y){const t=tipEl();t.innerHTML=html;t.style.display='block';positionTip(x,y);}
+function hideTip(){tipEl().style.display='none';}
+function skillTip(sk,rank){
+  const cost=sk.passiva?'Passiva':[(+sk.pm>0?'PM '+sk.pm:''),(+sk.cd>0?'CD '+sk.cd:''),(sk.recargaEsp?'Recarga esp.':'')].filter(Boolean).join(' · ')||'Livre';
+  const dmg=(sk.d1||sk.d2||sk.d3)?`<div class="ts"><span class="dmg">Dano ${sk.d1||0}/${sk.d2||0}/${sk.d3||0}</span>${sk.attr?' ['+sk.attr+']':''}</div>`:'';
+  let ev='';
+  if(rank>=5&&sk.r5)ev+=`<div class="te"><b>R5:</b> ${escapeHTML(sk.r5)}</div>`;
+  if(rank>=10&&sk.r10)ev+=`<div class="te"><b>R10:</b> ${escapeHTML(sk.r10)}</div>`;
+  if(rank>=15&&sk.r15)ev+=`<div class="te"><b>R15:</b> ${escapeHTML(sk.r15)}</div>`;
+  return `<div class="tn">${escapeHTML(sk.name)}</div><div class="tt">${sk.track||''} · R${rank} · ${cost}</div>${dmg}<div class="td">${escapeHTML(sk.desc||'')}</div>${ev}`;
+}
+function itemTip(it){
+  const parts=[];
+  if(it.d1||it.d2||it.d3)parts.push(`<span class="dmg">Dano ${it.d1||0}/${it.d2||0}/${it.d3||0}</span>${it.attr?' ['+it.attr+']':''}`);
+  if(it.dtype)parts.push(`<span class="dt">${it.dtype}</span>`);
+  if(it.prec)parts.push(`Prec +${it.prec}`);
+  if(it.def)parts.push(`<span style="color:#7fd1ff">Def +${it.def}</span>`);
+  if(it.twoHand)parts.push('2 mãos');
+  const st=parts.length?`<div class="ts">${parts.join(' · ')}</div>`:'';
+  return `<div class="tn">${escapeHTML(it.name)}</div><div class="tt">${escapeHTML(it.type||'')}</div>${st}${it.fx?`<div class="td">${escapeHTML(it.fx)}</div>`:''}`;
+}
+document.addEventListener('mouseover',e=>{
+  const el=e.target.closest('[data-tipkind]'); if(!el)return;
+  const k=el.dataset.tipkind;
+  if(k==='skill'){const o=SKILL_BY_ID[el.dataset.tipid]||SKILL_BY_NAME[norm(el.dataset.tipname)];if(o)showTip(skillTip(o,+el.dataset.tiprank||1),e.clientX,e.clientY);}
+  else if(k==='item'){const o=ITEM_BY_ID[el.dataset.tipid]||ITEM_BY_NAME[norm(el.dataset.tipname)];if(o)showTip(itemTip(o),e.clientX,e.clientY);}
+});
+document.addEventListener('mousemove',e=>{if(tipEl().style.display==='block')positionTip(e.clientX,e.clientY);});
+document.addEventListener('mouseout',e=>{if(e.target.closest('[data-tipkind]'))hideTip();});
 
 function init(){
   renderGm();
+  renderMonsters();
+  renderAchBoard();
+  loadCats();
   const room=localStorage.getItem(ROOMKEY); if(room)document.getElementById('roomCode').value=room;
   if(room&&localStorage.getItem(FBKEY))connectCloud();
 }

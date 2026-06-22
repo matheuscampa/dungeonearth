@@ -216,6 +216,37 @@
   .compan .cnote{flex:2;min-width:180px}
   .compan .chp{font-size:11px;color:#ff8a8a;white-space:nowrap;display:flex;align-items:center;gap:3px}
   .compan .chp input{width:42px;text-align:center;color:#ff8a8a}
+  /* pontos de atributo */
+  .appoints{display:flex;align-items:center;gap:9px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid #ffd166;border-radius:9px;padding:7px 10px;margin:10px 0 4px}
+  .appoints .apico{font-size:18px}
+  .appoints .rk{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+  .appoints input{background:#0e1116;border:1px solid var(--line);color:#8be08b;border-radius:6px;padding:5px 7px;font-size:14px}
+  /* barras de filtro/busca */
+  .toolbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
+  .toolbar input[type=text]{flex:1;min-width:150px;background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:7px;padding:7px 10px;font-size:13px}
+  .toolbar select{background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:7px;padding:7px 8px;font-size:12px}
+  .fchip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:13px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);cursor:pointer}
+  .fchip.on{background:var(--accent2);border-color:var(--accent2);color:#1a1206}
+  /* conquistas */
+  .ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:9px}
+  .ach{background:var(--panel2);border:1px solid var(--line);border-left:3px solid #555;border-radius:9px;padding:9px 11px;cursor:pointer;transition:.15s}
+  .ach:hover{border-color:var(--accent2)}
+  .ach.done{border-left-color:#4caf50;background:#16241a}
+  .ach .an{font-size:13px;font-weight:800;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .ach .achk{font-size:14px}
+  .ach .ac{font-size:11px;color:#c2c8d2;margin-top:4px;line-height:1.3}
+  .ach .ar{font-size:10.5px;color:var(--accent2);margin-top:4px}
+  .ach .aand{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+  /* enviar item */
+  .send-btn{font-size:11px}
+  .sendmodal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9998}
+  .sendmodal.show{display:flex}
+  .sendbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:420px;width:90%}
+  .sendbox h3{margin:0 0 4px} .sendbox .subt{font-size:12px;color:var(--dim);margin-bottom:12px}
+  .sendlist{display:flex;flex-direction:column;gap:7px;max-height:50vh;overflow:auto}
+  .sendlist button{width:100%;text-align:left;padding:10px 12px;font-size:13px}
+  /* toast */
+  #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#16241a;border:1px solid #4caf50;color:#cffcd8;padding:10px 16px;border-radius:10px;font-size:13px;z-index:99999;display:none;box-shadow:0 8px 26px rgba(0,0,0,.5)}
 </style>
 </head>
 <body>
@@ -270,6 +301,14 @@
       <div class="charname"><input id="charName" placeholder="Nome do personagem" oninput="save()"></div>
       <div class="lvl"><label>Nível</label><input type="number" id="level" min="1" value="1" oninput="save()">
         <label style="margin-left:8px">XP</label><input type="number" id="xp" min="0" value="0" oninput="saveXp()" style="width:90px" title="XP individual. Subir = 50 × nível (ver Sistema §14.2)"></div>
+      <div class="appoints" title="15 pontos no nível 1. Ao subir de nível: +3/nível até 20, +4 de 21-50, +5 de 51+. Calculado automaticamente: total − pontos já postos nos atributos.">
+        <span class="apico">🎯</span>
+        <div><div class="rk">Pontos de atributo disponíveis</div>
+          <span style="display:flex;align-items:center;gap:8px">
+            <input id="apAvail" type="number" value="15" readonly style="width:62px;font-weight:800;cursor:default" title="Automático: aumente um atributo abaixo para gastar.">
+            <span class="apnext" id="apNext" style="color:var(--dim);font-size:11px"></span>
+          </span></div>
+      </div>
       <h2>Atributos</h2>
       <div class="attrs" id="attrs"></div>
       <div class="derived" id="derived"></div>
@@ -342,6 +381,15 @@
       <div class="ps-box"><div><div class="rk">PS restantes</div><div class="big ok" id="psLeft">2</div></div></div>
       <div class="sys-note" style="flex:1;min-width:180px;margin:0">PM máx = INT×3 (gasto por spells). Ranks 1-5 = 1 PS · 6-10 = 2 · 11-15 = 4. Evoluções em 5/10/15.</div>
     </div>
+    <div class="toolbar">
+      <input type="text" id="skSearch" placeholder="Buscar skill…" oninput="setSkSearch(this.value)">
+      <span class="fchip on" data-tr="" onclick="setSkTrackF(this,'')">Todos</span>
+      <span class="fchip" data-tr="FOR" onclick="setSkTrackF(this,'FOR')">FOR</span>
+      <span class="fchip" data-tr="DEX" onclick="setSkTrackF(this,'DEX')">DEX</span>
+      <span class="fchip" data-tr="INT" onclick="setSkTrackF(this,'INT')">INT</span>
+      <span class="fchip" data-tr="CHA" onclick="setSkTrackF(this,'CHA')">CHA</span>
+      <span class="fchip" data-tr="NEU" onclick="setSkTrackF(this,'NEU')">NEU</span>
+    </div>
     <div id="skillList" class="skill-grid"></div>
   </div>
 
@@ -351,9 +399,55 @@
       <h2 style="margin:0">Inventário <span id="invCount" style="color:var(--accent2)"></span></h2>
       <button class="sm primary" onclick="openAddItem()">+ Adicionar item</button>
     </div>
+    <div class="toolbar">
+      <input type="text" id="invSearch" placeholder="Buscar item…" oninput="setInvSearch(this.value)">
+      <select id="invCatSel" onchange="setInvCat(this.value)">
+        <option value="">Todos os tipos</option>
+        <option value="mao">Mão (armas/escudos)</option>
+        <option value="cabeca">Cabeça</option><option value="camiseta">Camiseta</option>
+        <option value="armadura">Armadura</option><option value="roupabaixo">Roupa de baixo</option>
+        <option value="calca">Calça</option><option value="calcado">Calçado</option>
+        <option value="acessorio">Acessório</option><option value="consumivel">Consumível</option>
+      </select>
+    </div>
+    <div class="toolbar" id="invRarChips">
+      <span class="fchip on" data-rar="" onclick="setInvRar(this,'')">Todas raridades</span>
+      <span class="fchip" data-rar="comum" onclick="setInvRar(this,'comum')">Comum</span>
+      <span class="fchip" data-rar="incomum" onclick="setInvRar(this,'incomum')">Incomum</span>
+      <span class="fchip" data-rar="raro" onclick="setInvRar(this,'raro')">Raro</span>
+      <span class="fchip" data-rar="epico" onclick="setInvRar(this,'epico')">Épico</span>
+      <span class="fchip" data-rar="lendario" onclick="setInvRar(this,'lendario')">Lendário</span>
+      <span class="fchip" data-rar="celestial" onclick="setInvRar(this,'celestial')">Celestial</span>
+    </div>
     <div id="invList" class="invlist"></div>
   </div>
+
+  <!-- CONQUISTAS -->
+  <div class="panel" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">Conquistas <span id="achCount" style="color:var(--accent2)"></span></h2>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="achSearch" placeholder="Buscar conquista…" oninput="setAchSearch(this.value)">
+      <select id="achAndarSel" onchange="setAchAndar(this.value)">
+        <option value="">Todos os andares</option>
+        <option value="1">Andar 1</option>
+      </select>
+    </div>
+    <div id="achList" class="ach-grid"></div>
+  </div>
 </div>
+
+<!-- MODAL: ENVIAR ITEM -->
+<div class="sendmodal" id="sendModal">
+  <div class="sendbox">
+    <h3 id="sendTitle">Enviar item</h3>
+    <div class="subt" id="sendSub">Escolha o jogador da mesa que vai receber.</div>
+    <div class="sendlist" id="sendList"></div>
+    <div style="text-align:right;margin-top:12px"><button class="ghost" onclick="closeSend()">Cancelar</button></div>
+  </div>
+</div>
+<div id="toast"></div>
 
 <!-- MODAL: SELETOR + EDITOR -->
 <div class="overlay" id="overlay">
@@ -481,6 +575,34 @@ const TRACK = {
   NEU:{cor:'var(--t-NEU)',nome:'Neutra'}
 };
 
+/* ---------- Conquistas (catálogo embutido; cresce com a campanha) ---------- */
+const CONQUISTAS = [
+  {id:'primeiro-sangue',andar:1,nome:'Primeiro Sangue',cond:'Cause dano a um inimigo pela 1ª vez.',rec:'+10 XP · 1 Caixa Bronze'},
+  {id:'ainda-respirando',andar:1,nome:'Ainda Respirando',cond:'Sobreviva ao seu primeiro combate.',rec:'+10 XP · 10 ouro'},
+  {id:'maos-nuas',andar:1,nome:'Mãos Nuas, Coração Cheio',cond:'Vença um combate lutando desarmado/improvisado.',rec:'+25 XP · Bandagens de Luta'},
+  {id:'dedetizador',andar:1,nome:'Dedetizador',cond:'Mate 10 inimigos no Andar 1.',rec:'+30 XP · 1 Caixa Bronze'},
+  {id:'silencio',andar:1,nome:'Silêncio!',cond:'Mate um Goblin Batedor antes do alarme.',rec:'+20 XP · 2d6 ouro'},
+  {id:'abre-casca',andar:1,nome:'Abre-Casca',cond:'Mate uma Barata Blindada com dano contundente.',rec:'+15 XP · 1 Caixa Bronze'},
+  {id:'mao-firme',andar:1,nome:'Mão Firme',cond:'Desarme uma armadilha sem dispará-la.',rec:'+20 XP · 1 Granada de Estilhaços'},
+  {id:'tecedora',andar:1,nome:'Tecedora Silenciada',cond:'Derrote a Aranha das Túneis.',rec:'+40 XP · 1 Caixa Prata'},
+  {id:'fregues-bopca',andar:1,nome:'Freguês do Bopca',cond:'Faça sua primeira compra na Sala Segura.',rec:'+10 XP · −5% vitalício no Bopca'},
+  {id:'papai-noel',andar:1,nome:'Papai Noel às Avessas',cond:'Abra suas primeiras Caixas de Loot.',rec:'+12 XP · 1 Caixa Bronze extra'},
+  {id:'abencoado-rng',andar:1,nome:'Abençoado pelo RNG',cond:'Tire um nat 20.',rec:'+15 XP · 1 Caixa Prata'},
+  {id:'palhaco',andar:1,nome:'Palhaço da Corte',cond:'Tire um nat 1 e sobreviva à falha.',rec:'+12 XP · +2 PA'},
+  {id:'cacador-bruxos',andar:1,nome:'Caçador de Bruxos',cond:'Mate o Goblin Xamã antes dos outros goblins.',rec:'+25 XP · 1 Caixa Bronze'},
+  {id:'carrasco-carrasco',andar:1,nome:'Carrasco do Carrasco',cond:'Derrote o Hobgoblin Carrasco.',rec:'+60 XP · 1 item Raro garantido'},
+  {id:'na-trave',andar:1,nome:'Na Trave',cond:'Termine um combate com exatamente 1 HP.',rec:'+25 XP · 1 Poção de Cura'},
+  {id:'astro-nascente',andar:1,nome:'Astro Nascente',cond:'Acumule seus primeiros 5 PA.',rec:'+15 XP · 1 Caixa de Patrocínio'},
+  {id:'pe-de-meia',andar:1,nome:'Pé-de-Meia Real',cond:'Recolha todo o ouro do trono de Groznak.',rec:'+20 XP · 3d6 ouro'},
+  {id:'regicida',andar:1,nome:'Regicida',cond:'Derrote Groznak, o Rei-Goblin.',rec:'+120 XP · Caixa Prata · Título “Regicida”'},
+  {id:'coroado',andar:1,nome:'Coroado',cond:'Equipe a Coroa de Cone.',rec:'+10 XP · +3 PA'},
+  {id:'para-baixo',andar:1,nome:'Para Baixo é o Único Caminho',cond:'Desça para o Andar 2.',rec:'+80 XP · 1 Caixa Prata'},
+];
+/* ---------- Pontos de atributo por nível ---------- */
+function pointsForLevel(L){ return L<=20?3:(L<=50?4:5); } // ganho ao ATINGIR o nível L
+/* ---------- estado de filtros (runtime) ---------- */
+let invSearch='', invRar='', invCat='', skSearch='', skTrackF='', achSearch='', achAndar='';
+
 // === Identidade do jogador pela URL (?pid=) — definida ANTES de tudo ===
 const PIDKEY='dcc_player_id';
 const URLP=new URLSearchParams(location.search);
@@ -507,6 +629,9 @@ if(state.hpCur==null)state.hpCur=8+state.attr.CON*3;
 if(state.pa==null)state.pa=0;
 if(state.xp==null)state.xp=0;
 if(!state.companions)state.companions=[];
+if(state.apAvail==null)state.apAvail=0;
+if(state.apCredited==null)state.apCredited=state.level||1;
+if(!state.achievements)state.achievements={};
 let catalog = loadCatalog() || [];
 let skillCatalog = loadSkillCat() || [];
 let skillFilter='ALL';
@@ -548,11 +673,14 @@ function isDefaultSheet(){
   return !(state.name) && Object.keys(state.cards||{}).length===0 && (state.skills||[]).length===0 && (state.inventory||[]).length===0 && (state.gold||0)===0;
 }
 function applyCloud(data){
-  const base={name:'',level:1,attr:{FOR:1,DEX:1,CON:1,INT:1,CHA:1},cards:{},inventory:[],gold:0,boxes:{bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0},skills:[],psTotal:2,pmCur:0,hpCur:null,pa:0,xp:0,companions:[]};
+  const base={name:'',level:1,attr:{FOR:1,DEX:1,CON:1,INT:1,CHA:1},cards:{},inventory:[],gold:0,boxes:{bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0},skills:[],psTotal:2,pmCur:0,hpCur:null,pa:0,xp:0,companions:[],apAvail:0,apCredited:null,achievements:{}};
   state=Object.assign(base,data||{});
   if(!state.attr)state.attr=base.attr;
   if(state.hpCur==null)state.hpCur=8+state.attr.CON*3;
   if(!state.companions)state.companions=[];
+  if(state.apAvail==null)state.apAvail=0;
+  if(state.apCredited==null)state.apCredited=state.level||1;
+  if(!state.achievements)state.achievements={};
   localStorage.setItem(KEY,JSON.stringify(state));
   document.getElementById('charName').value=state.name||'';
   document.getElementById('level').value=state.level||1;
@@ -561,6 +689,7 @@ function applyCloud(data){
   document.getElementById('pa').value=state.pa||0;
   document.getElementById('xp').value=state.xp||0;
   renderAttrs(); updateAttrSqrt(); render();
+  attachInbox();
 }
 function cloudSyncOnConnect(){ // ao conectar: a versão MAIS RECENTE vence (por updatedAt)
   if(!fbDb)return;
@@ -570,7 +699,8 @@ function cloudSyncOnConnect(){ // ao conectar: a versão MAIS RECENTE vence (por
     const localT=state.updatedAt||0, cloudT=(data&&data.updatedAt)||0;
     if(data && (cloudT>localT || isDefaultSheet())){ applyCloud(data); } // nuvem mais nova (ou local vazia) → carrega
     else { pushCloud(); }                                               // local mais nova (ou sem nuvem) → publica
-  }).catch(()=>{try{pushCloud();}catch(e){}});
+    attachInbox();
+  }).catch(()=>{try{pushCloud();}catch(e){}attachInbox();});
 }
 function pullCloud(){ // botão "Puxar ficha" — recuperação manual
   if(!fbDb){alert('Conecte-se à mesa primeiro (📡 Conectar mesa).');return;}
@@ -586,19 +716,31 @@ function pushCloud(){
   if(!fbDb)return;
   const room=localStorage.getItem(ROOMKEY); if(!room)return;
   fbDb.ref('mesas/'+room+'/jogadores/'+playerId).set({
-    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),hpCur:state.hpCur!=null?state.hpCur:(8+state.attr.CON*3),hpMax:8+state.attr.CON*3,pa:state.pa||0,xp:state.xp||0,companions:state.companions||[],updatedAt:state.updatedAt||Date.now()
+    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),hpCur:state.hpCur!=null?state.hpCur:(8+state.attr.CON*3),hpMax:8+state.attr.CON*3,pa:state.pa||0,xp:state.xp||0,companions:state.companions||[],apAvail:apComputed(),achievements:state.achievements||{},updatedAt:state.updatedAt||Date.now()
   });
 }
 function persistState(){state.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(state));pushCloud();}
 
 function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
 function loadCatalog(){try{return JSON.parse(localStorage.getItem(CATKEY))}catch(e){return null}}
+// Pool de pontos de atributo (DERIVADO): 15 no nível 1 + ganhos por nível; desconta o que já foi posto nos atributos.
+const AP_BASE_LV1=15;
+function apTotalEarned(L){let t=AP_BASE_LV1;for(let l=2;l<=(L||1);l++)t+=pointsForLevel(l);return t;}
+function apSpent(){return ATTRS.reduce((a,[s])=>a+(+state.attr[s]||0),0)-ATTRS.length;} // atributos começam em 1 cada
+function apComputed(){return apTotalEarned(state.level||1)-apSpent();}
 function save(){
   state.name=document.getElementById('charName').value;
   state.level=+document.getElementById('level').value||1;
   ATTRS.forEach(([s])=>{state.attr[s]=+document.getElementById('a_'+s).value||1});
-  updateAttrSqrt();
+  state.apAvail=apComputed();
+  updateAttrSqrt(); renderAp();
   persistState();render();
+}
+function renderAp(){
+  state.apAvail=apComputed();
+  const el=document.getElementById('apAvail'); if(el)el.value=state.apAvail;
+  if(el)el.style.color=state.apAvail<0?'#ff6b6b':'#8be08b';
+  const nt=document.getElementById('apNext'); if(nt)nt.textContent='nv1 = 15 pts · próx. nível: +'+pointsForLevel((state.level||1)+1);
 }
 function updateAttrSqrt(){
   ATTRS.forEach(([s])=>{const el=document.getElementById('sq_'+s); if(el)el.textContent='⌊√⌋ '+isqrt(state.attr[s]);});
@@ -743,7 +885,78 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
     <div class="atk-foot">Baixa / Média / Alta já calculadas. Crítico = faixa Alta × 2. Improvisada: 1/3/6 [FOR].
     Spells sem número aqui (faixa "Média/Alta") aparecem só na lista de Skills.</div>`;
 }
-function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();renderHp();renderCompanions();}
+function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();renderHp();renderCompanions();renderAp();renderAch();}
+
+/* ---------- filtros de skills ---------- */
+function setSkSearch(v){skSearch=(v||'').toLowerCase();renderSkills();}
+function setSkTrackF(el,t){skTrackF=t||'';document.querySelectorAll('.toolbar .fchip[data-tr]').forEach(c=>c.classList.toggle('on',c===el));renderSkills();}
+
+/* ---------- conquistas ---------- */
+function setAchSearch(v){achSearch=(v||'').toLowerCase();renderAch();}
+function setAchAndar(v){achAndar=v||'';renderAch();}
+function toggleAch(id){ state.achievements=state.achievements||{}; if(state.achievements[id])delete state.achievements[id]; else state.achievements[id]=true; persistState(); renderAch(); }
+function renderAch(){
+  const list=document.getElementById('achList'); if(!list)return;
+  const done=state.achievements||{};
+  const ndone=CONQUISTAS.filter(a=>done[a.id]).length;
+  document.getElementById('achCount').textContent='· '+ndone+'/'+CONQUISTAS.length;
+  const shown=CONQUISTAS.filter(a=>(!achAndar||String(a.andar)===achAndar)&&(!achSearch||a.nome.toLowerCase().includes(achSearch)||a.cond.toLowerCase().includes(achSearch)));
+  if(!shown.length){list.innerHTML='<div class="skill-empty">Nenhuma conquista bate com o filtro/busca.</div>';return;}
+  list.innerHTML=shown.map(a=>{
+    const d=!!done[a.id];
+    return `<div class="ach ${d?'done':''}" onclick='toggleAch(${JSON.stringify(a.id)})' title="Clique para marcar/desmarcar">
+      <div class="an"><span>${escapeHTML(a.nome)}</span><span class="achk">${d?'✅':'⬜'}</span></div>
+      <div class="aand">Andar ${a.andar}</div>
+      <div class="ac">${escapeHTML(a.cond)}</div>
+      <div class="ar">🎁 ${escapeHTML(a.rec)}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- enviar item a outro jogador da mesa ---------- */
+let _sendUid=null;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display='none',4000);}
+function closeSend(){document.getElementById('sendModal').classList.remove('show');_sendUid=null;}
+function openSendItem(u){
+  const it=state.inventory.find(x=>x.uid===u); if(!it)return;
+  if(!fbDb){alert('Conecte-se à mesa primeiro (📡 Conectar mesa) para enviar itens.');return;}
+  const room=localStorage.getItem(ROOMKEY); if(!room){alert('Conecte-se à mesa primeiro.');return;}
+  _sendUid=u;
+  document.getElementById('sendTitle').textContent='Enviar: '+(it.name||'item');
+  document.getElementById('sendSub').textContent='Envia 1 unidade para a ficha do jogador escolhido.';
+  const box=document.getElementById('sendList'); box.innerHTML='<div class="skill-empty">Carregando jogadores…</div>';
+  document.getElementById('sendModal').classList.add('show');
+  Promise.all([
+    fbDb.ref('mesas/'+room+'/jogadores').once('value'),
+    fbDb.ref('mesas/'+room+'/ocultos').once('value')
+  ]).then(([js,oc])=>{
+    const players=js.val()||{}, ocultos=oc.val()||{};
+    const targets=Object.keys(players).filter(pid=>pid!==playerId && !ocultos[pid]);
+    if(!targets.length){box.innerHTML='<div class="skill-empty">Nenhum outro jogador disponível na mesa.</div>';return;}
+    box.innerHTML=targets.map(pid=>`<button class="primary" onclick='doSendItem(${JSON.stringify(pid)})'>${escapeHTML(players[pid].name||pid)}</button>`).join('');
+  }).catch(e=>{box.innerHTML='<div class="skill-empty">Falha ao listar jogadores: '+escapeHTML(e.message)+'</div>';});
+}
+function doSendItem(targetPid){
+  const u=_sendUid; const it=state.inventory.find(x=>x.uid===u); if(!it){closeSend();return;}
+  const room=localStorage.getItem(ROOMKEY); if(!room||!fbDb){closeSend();return;}
+  const card={name:it.name||'',type:it.type||'',rar:it.rar||'comum',d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',srcId:it.srcId||'',cat:it.cat||'consumivel',qty:1};
+  fbDb.ref('mesas/'+room+'/inbox/'+targetPid).push({item:card,from:state.name||'(sem nome)',ts:Date.now()})
+    .then(()=>{
+      if((it.qty||1)>1)it.qty=it.qty-1; else state.inventory=state.inventory.filter(x=>x.uid!==u);
+      persistState();render();toast('Enviado: '+(card.name||'item'));closeSend();
+    }).catch(e=>{alert('Falha ao enviar: '+e.message);});
+}
+let _inboxAttached=false;
+function attachInbox(){
+  if(!fbDb)return; const room=localStorage.getItem(ROOMKEY); if(!room)return;
+  if(_inboxAttached)return; _inboxAttached=true;
+  const ref=fbDb.ref('mesas/'+room+'/inbox/'+playerId);
+  ref.on('child_added',snap=>{
+    const v=snap.val();
+    if(v&&v.item){ addInvItem(v.item, v.item.cat||'consumivel', v.item.qty||1); persistState(); render(); toast('📥 Você recebeu: '+(v.item.name||'um item')+(v.from?' (de '+v.from+')':'')); }
+    snap.ref.remove();
+  });
+}
 
 /* ---------- helpers de carta ---------- */
 function uid(){return 'i_'+Math.random().toString(36).slice(2,9);}
@@ -864,12 +1077,19 @@ function closeModal(){document.getElementById('overlay').classList.remove('show'
 /* ---------- inventário ---------- */
 function freeAccSlot(){return ['acc1','acc2','acc3','acc4','acc5'].find(s=>!state.cards[s]);}
 function freeHandSlot(){const b=blockedHand();return ['maoE','maoD'].find(s=>!state.cards[s]&&b!==s);}
+function setInvSearch(v){invSearch=(v||'').toLowerCase();renderInventory();}
+function setInvCat(v){invCat=v||'';renderInventory();}
+function setInvRar(el,r){invRar=r||'';document.querySelectorAll('#invRarChips .fchip').forEach(c=>c.classList.toggle('on',c===el));renderInventory();}
 function renderInventory(){
   const list=document.getElementById('invList');
   const totQ=state.inventory.reduce((a,b)=>a+(b.qty||1),0);
   document.getElementById('invCount').textContent = state.inventory.length?('· '+totQ):'';
   if(!state.inventory.length){list.innerHTML='<div class="inv-empty">Inventário vazio. Use "+ Adicionar item" para guardar loot sobressalente.</div>';return;}
-  list.innerHTML=state.inventory.map(it=>{
+  const filtered=state.inventory.filter(it=>
+    (!invRar||it.rar===invRar) && (!invCat||it.cat===invCat) &&
+    (!invSearch||(it.name||'').toLowerCase().includes(invSearch)||(it.type||'').toLowerCase().includes(invSearch)||(it.fx||'').toLowerCase().includes(invSearch)));
+  if(!filtered.length){list.innerHTML='<div class="inv-empty">Nenhum item bate com o filtro/busca.</div>';return;}
+  list.innerHTML=filtered.map(it=>{
     const r=RAR[it.rar]||RAR.comum; const q=it.qty||1;
     const fx=it.fx?`<div class="fx">${escapeHTML(it.fx)}</div>`:'';
     const u=JSON.stringify(it.uid);
@@ -885,6 +1105,7 @@ function renderInventory(){
         <div class="st">${cardStatsHTML(it)}</div>${fx}
       </div>
       <div class="acts">${stepper}${primary}
+        <button class="sm send-btn" onclick='openSendItem(${u})' title="Enviar para outro jogador da mesa">📤 Enviar</button>
         <button class="sm danger ghost" onclick='discardInventory(${u})'>Descartar</button>
       </div></div>`;
   }).join('');
@@ -1086,7 +1307,9 @@ function renderSkills(){
   document.getElementById('skillCount').textContent=state.skills.length?('· '+state.skills.length):'';
   const list=document.getElementById('skillList');
   if(!state.skills.length){list.innerHTML='<div class="skill-empty">Nenhuma skill ainda. Carregue o catálogo de skills e clique em "+ Adicionar skill".</div>';return;}
-  list.innerHTML=state.skills.map(s=>{
+  const shown=state.skills.filter(s=>(!skTrackF||s.track===skTrackF)&&(!skSearch||(s.name||'').toLowerCase().includes(skSearch)||(s.desc||'').toLowerCase().includes(skSearch)));
+  if(!shown.length){list.innerHTML='<div class="skill-empty">Nenhuma skill bate com o filtro/busca.</div>';return;}
+  list.innerHTML=shown.map(s=>{
     const tr=TRACK[s.track]||TRACK.NEU; const rank=s.rank||1;
     const id=JSON.stringify(s.srcId);
     const evo=(lbl,txt,need)=>txt?`<div class="sk-evo ${rank>=need?'on':'off'}"><span class="lk">${rank>=need?'✓':'🔒'} R${need}</span><span>${escapeHTML(txt)}</span></div>`:'';
