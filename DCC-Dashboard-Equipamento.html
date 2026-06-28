@@ -770,7 +770,7 @@ function pushCloud(){
   if(!fbDb)return;
   const room=localStorage.getItem(ROOMKEY); if(!room)return;
   fbDb.ref('mesas/'+room+'/jogadores/'+playerId).set({
-    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),hpCur:state.hpCur!=null?state.hpCur:(8+state.attr.CON*3),hpMax:8+state.attr.CON*3,pa:state.pa||0,xp:state.xp||0,companions:state.companions||[],apAvail:apComputed(),achievements:state.achievements||{},updatedAt:state.updatedAt||Date.now()
+    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,attrEff:{FOR:effAttr('FOR'),DEX:effAttr('DEX'),CON:effAttr('CON'),INT:effAttr('INT'),CHA:effAttr('CHA')},cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),hpCur:state.hpCur!=null?state.hpCur:hpMaxVal(),hpMax:hpMaxVal(),pa:state.pa||0,xp:state.xp||0,companions:state.companions||[],apAvail:apComputed(),achievements:state.achievements||{},updatedAt:state.updatedAt||Date.now()
   });
 }
 function persistState(){state.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(state));pushCloud();}
@@ -798,10 +798,21 @@ function renderAp(){
   const nt=document.getElementById('apNext'); if(nt)nt.textContent='soma nv1 = 15 · próx. nível: +'+pointsForLevel((state.level||1)+1);
 }
 function updateAttrSqrt(){
-  ATTRS.forEach(([s])=>{const el=document.getElementById('sq_'+s); if(el)el.textContent='⌊√⌋ '+isqrt(state.attr[s]);});
+  const bon=attrBonus();
+  ATTRS.forEach(([s])=>{const el=document.getElementById('sq_'+s); if(!el)return;
+    const eff=effAttr(s), b=bon[s]||0;
+    el.innerHTML='⌊√⌋ '+isqrt(eff)+(b?` <span style="color:#8be08b">(+${b} equip → ${eff})</span>`:'');
+  });
 }
 const isqrt = x => Math.floor(Math.sqrt(Math.max(0,x)));
 function escapeHTML(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+/* ---------- bônus de atributo vindo de itens EQUIPADOS ---------- */
+function attrBonus(){
+  const b={FOR:0,DEX:0,CON:0,INT:0,CHA:0};
+  Object.values(state.cards||{}).forEach(c=>{ if(c&&c.ab)for(const k in b)b[k]+=(+c.ab[k]||0); });
+  return b;
+}
+function effAttr(s){ return (state.attr[s]||1)+(attrBonus()[s]||0); } // atributo efetivo (base + equipamento)
 
 /* ---------- catálogo ---------- */
 function setCatalog(arr,fromUrl){
@@ -834,13 +845,14 @@ function renderAttrs(){
 }
 function totalDef(){
   let bonus=0; Object.values(state.cards).forEach(c=>bonus+=(+c.def||0));
-  return {sqrt:isqrt(state.attr.DEX),bonus,total:isqrt(state.attr.DEX)+bonus};
+  return {sqrt:isqrt(effAttr('DEX')),bonus,total:isqrt(effAttr('DEX'))+bonus};
 }
 function renderDerived(){
-  const hp=8+state.attr.CON*3, mana=state.attr.INT*3, d=totalDef();
+  const hp=8+effAttr('CON')*3, mana=effAttr('INT')*3, d=totalDef();
+  const bon=attrBonus(); const gear=k=>bon[k]?` <span style="color:#8be08b">(+${bon[k]})</span>`:'';
   document.getElementById('derived').innerHTML=`
-    <div class="stat"><div class="k">HP máximo</div><div class="v">${hp}</div><div class="sub">8 + CON×3</div></div>
-    <div class="stat"><div class="k">Mana</div><div class="v">${mana}</div><div class="sub">INT×3</div></div>
+    <div class="stat"><div class="k">HP máximo</div><div class="v">${hp}</div><div class="sub">8 + CON×3${gear('CON')}</div></div>
+    <div class="stat"><div class="k">Mana</div><div class="v">${mana}</div><div class="sub">INT×3${gear('INT')}</div></div>
     <div class="stat def"><div class="k">Defesa</div><div class="v">${d.total}</div><div class="sub">⌊√DEX⌋ ${d.sqrt} + equip ${d.bonus}</div></div>
     <div class="stat"><div class="k">Iniciativa</div><div class="v">+${d.sqrt}</div><div class="sub">d20 + ⌊√DEX⌋</div></div>`;
 }
@@ -858,7 +870,13 @@ function cardStatsHTML(c){
   const prec=c.prec?`<div>Precisão +${c.prec}</div>`:'';
   const def=c.def?`<div><span class="def">Defesa +${c.def}</span></div>`:'';
   const ub=(c.ubd||c.ubp)?`<div><span style="color:#ff9d5c;font-weight:700">Desarmado ${c.ubd?'+'+c.ubd+' faixa':''}${c.ubd&&c.ubp?' · ':''}${c.ubp?'+'+c.ubp+' Prec':''}</span></div>`:'';
-  return dmg+prec+def+ub;
+  const ab=abHTML(c.ab);
+  return dmg+prec+def+ub+ab;
+}
+function abHTML(ab){
+  if(!ab)return '';
+  const parts=['FOR','DEX','CON','INT','CHA'].filter(k=>+ab[k]).map(k=>'+'+ab[k]+' '+k);
+  return parts.length?`<div><span style="color:#8be08b;font-weight:700">${parts.join(' · ')}</span></div>`:'';
 }
 function renderBoard(){
   const board=document.getElementById('board'); const blocked=blockedHand();
@@ -913,14 +931,14 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
   const el=document.getElementById('unarmed'); if(!el)return;
   const rows=[]; const TR={FOR:'var(--t-FOR)',DEX:'var(--t-DEX)',INT:'var(--t-INT)',CHA:'var(--t-CHA)',NEU:'var(--t-NEU)'};
   // 1) Desarmado
-  const FOR=state.attr.FOR||1, DEX=state.attr.DEX||1, reg=FOR>=DEX?'FOR':'DEX', regVal=Math.max(FOR,DEX);
+  const FOR=effAttr('FOR'), DEX=effAttr('DEX'), reg=FOR>=DEX?'FOR':'DEX', regVal=Math.max(FOR,DEX);
   let ubd=0,ubp=0; Object.values(state.cards).forEach(c=>{ubd+=(+c.ubd||0);ubp+=(+c.ubp||0);});
   const um=regVal/5, ub=[1,2,4].map(b=>Math.max(1,Math.floor((b+ubd)*um)));
   rows.push(atkRow('Desarmado','['+reg+'] · punhos'+(ubd?' +'+ubd+'f gear':''), ub, isqrt(regVal)+ubp, '#ff9d5c'));
   // 2) Armas equipadas (têm faixas e atributo regente)
   Object.values(state.cards).forEach(c=>{
     if((c.d1||c.d2||c.d3) && c.attr){
-      const av=state.attr[c.attr]||1, m=av/5;
+      const av=effAttr(c.attr), m=av/5;
       const b=[c.d1,c.d2,c.d3].map(x=>Math.max(1,Math.floor((+x||0)*m)));
       rows.push(atkRow(c.name||'Arma','['+c.attr+'] · arma', b, isqrt(av)+(+c.prec||0), RAR[c.rar]?RAR[c.rar].cor:'var(--r-comum)'));
     }
@@ -928,7 +946,7 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
   // 3) Spells/skills de dano (faixas estruturadas d1/d2/d3 + attr)
   (state.skills||[]).forEach(s=>{
     const dm=skillDamage(s); if(!dm)return;
-    const av=state.attr[dm.attr]||1, m=av/5;
+    const av=effAttr(dm.attr), m=av/5;
     const b=dm.d.map(x=>Math.max(1,Math.floor((+x||0)*m)));
     const cost=s.passiva?'passiva':([(+s.pm>0?'PM'+s.pm:''),(+s.cd>0?'CD'+s.cd:'')].filter(Boolean).join('·')||'livre');
     rows.push(atkRow(s.name,'['+dm.attr+'] · '+cost, b, isqrt(av), TR[s.track]||TR.NEU));
@@ -940,7 +958,7 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
     <div class="atk-foot">Baixa / Média / Alta já calculadas. Crítico = faixa Alta × 2. Improvisada: 1/3/6 [FOR].
     Spells sem número aqui (faixa "Média/Alta") aparecem só na lista de Skills.</div>`;
 }
-function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();renderHp();renderCompanions();renderAp();renderAch();}
+function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();renderHp();renderCompanions();renderAp();renderAch();updateAttrSqrt();}
 
 /* ---------- filtros de skills ---------- */
 function setSkSearch(v){skSearch=(v||'').toLowerCase();renderSkills();}
@@ -994,7 +1012,7 @@ function openSendItem(u){
 function doSendItem(targetPid){
   const u=_sendUid; const it=state.inventory.find(x=>x.uid===u); if(!it){closeSend();return;}
   const room=localStorage.getItem(ROOMKEY); if(!room||!fbDb){closeSend();return;}
-  const card={name:it.name||'',type:it.type||'',rar:it.rar||'comum',d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',srcId:it.srcId||'',cat:it.cat||'consumivel',qty:1};
+  const card={name:it.name||'',type:it.type||'',rar:it.rar||'comum',d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',ab:it.ab||null,srcId:it.srcId||'',cat:it.cat||'consumivel',qty:1};
   fbDb.ref('mesas/'+room+'/inbox/'+targetPid).push({item:card,from:state.name||'(sem nome)',ts:Date.now()})
     .then(()=>{
       if((it.qty||1)>1)it.qty=it.qty-1; else state.inventory=state.inventory.filter(x=>x.uid!==u);
@@ -1016,7 +1034,7 @@ function attachInbox(){
 /* ---------- helpers de carta ---------- */
 function uid(){return 'i_'+Math.random().toString(36).slice(2,9);}
 function cardFromCatalog(i){return {name:i.name,type:i.type,rar:i.rar,d1:i.d1||0,d2:i.d2||0,d3:i.d3||0,
-  attr:i.attr||'',prec:i.prec||0,def:i.def||0,twoHand:!!i.twoHand,ubd:+i.ubd||0,ubp:+i.ubp||0,fx:i.fx||'',srcId:i.id||''};}
+  attr:i.attr||'',prec:i.prec||0,def:i.def||0,twoHand:!!i.twoHand,ubd:+i.ubd||0,ubp:+i.ubp||0,fx:i.fx||'',ab:i.ab||null,srcId:i.id||''};}
 function catOf(slotId){const s=SLOTS.find(x=>x.id===slotId);return s?s.cat:'';}
 function addInvItem(card,cat,qty){
   qty=qty||1;
@@ -1196,7 +1214,7 @@ function discardInventory(u){
 
 /* ---------- ouro + caixas ---------- */
 function saveGold(){state.gold=Math.max(0,+document.getElementById('gold').value||0);persistState();}
-function hpMaxVal(){return 8+(state.attr.CON||0)*3;}
+function hpMaxVal(){return 8+effAttr('CON')*3;}
 function saveHp(){state.hpCur=Math.max(0,+document.getElementById('hpCur').value||0);persistState();renderHp();}
 function restoreHp(){state.hpCur=hpMaxVal();document.getElementById('hpCur').value=state.hpCur;persistState();renderHp();}
 function renderHp(){
@@ -1447,7 +1465,7 @@ function buyMarket(id){
     if(!committed){toast('Essa oferta já foi vendida por outro jogador.');renderMarket();return;}
     // committed: conseguimos remover -> a oferta era nossa
     state.gold=(state.gold||0)-(o.cost||0);
-    const card={name:o.name,type:o.type,rar:o.rar,d1:o.d1||0,d2:o.d2||0,d3:o.d3||0,attr:o.attr||'',prec:o.prec||0,def:o.def||0,twoHand:!!o.twoHand,ubd:+o.ubd||0,ubp:+o.ubp||0,fx:o.fx||'',srcId:o.srcId||''};
+    const card={name:o.name,type:o.type,rar:o.rar,d1:o.d1||0,d2:o.d2||0,d3:o.d3||0,attr:o.attr||'',prec:o.prec||0,def:o.def||0,twoHand:!!o.twoHand,ubd:+o.ubd||0,ubp:+o.ubp||0,fx:o.fx||'',ab:o.ab||null,srcId:o.srcId||''};
     addInvItem(card,o.cat||o.slot||'consumivel',1);
     persistState();render();
     toast('🛒 Comprou: '+(o.name||'item')+' por '+(o.cost||0)+' ouro.');
@@ -1499,7 +1517,7 @@ function rankStepCost(r){return r<=5?1:(r<=10?2:4);}            // custo para EN
 function skillTotalCost(rank){let t=1;for(let r=2;r<=rank;r++)t+=rankStepCost(r);return t;}
 function skillNextCost(rank){return rank>=15?0:rankStepCost(rank+1);}
 function psSpent(){return state.skills.reduce((a,s)=>a+skillTotalCost(s.rank||1),0);}
-function manaMax(){return state.attr.INT*3;}
+function manaMax(){return effAttr('INT')*3;}
 // monta o rótulo de custo de uma skill (PM / cooldown / passiva / recarga especial)
 function skillCostLabel(s){
   if(s.passiva) return '<span style="color:var(--t-NEU)">Passiva</span>';
