@@ -342,7 +342,8 @@
       <h2>Crawler</h2>
       <div class="charname"><input id="charName" placeholder="Nome do personagem" oninput="save()"></div>
       <div class="lvl"><label>Nível</label><input type="number" id="level" min="1" value="1" oninput="save()">
-        <label style="margin-left:8px">XP</label><input type="number" id="xp" min="0" value="0" oninput="saveXp()" style="width:90px" title="XP individual. Subir = 50 × nível (ver Sistema §14.2)"></div>
+        <label style="margin-left:8px">XP</label><input type="number" id="xp" min="0" value="0" oninput="saveXp()" style="width:90px" title="XP individual acumulado (ver Tabela de XP)"></div>
+      <div id="xpInfo" style="font-size:11px;color:var(--dim);margin-top:4px"></div>
       <div class="appoints" title="Nível 1: a soma dos 5 atributos = 15 (mín 1, máx 6 cada). Ao subir de nível: +3/nível até 20, +4 de 21-50, +5 de 51+. Disponível = orçamento − soma atual dos atributos.">
         <span class="apico">🎯</span>
         <div><div class="rk">Pontos de atributo disponíveis</div>
@@ -1003,7 +1004,7 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
     <div class="atk-foot">Dano (Baixa/Média/Alta) e Precisão já incluem os modificadores de equipamento${gp?(' (Prec +'+gp+' de equip)'):''}. Crítico = faixa Alta × 2.
     🔷 Varinhas custam 1 PM e cajados 2 PM por ataque básico. Improvisada: 1/3/6 [FOR].</div>`;
 }
-function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();renderHp();renderCompanions();renderAp();renderAch();updateAttrSqrt();syncResourceInputs();}
+function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();renderHp();renderCompanions();renderAp();renderAch();updateAttrSqrt();syncResourceInputs();renderXpInfo();}
 
 /* ---------- filtros de skills ---------- */
 function setSkSearch(v){skSearch=(v||'').toLowerCase();renderSkills();}
@@ -1330,7 +1331,27 @@ function renderHp(){
   const cur=document.getElementById('hpCur'); if(document.activeElement!==cur)cur.value=state.hpCur;
 }
 function savePa(){state.pa=Math.max(0,+document.getElementById('pa').value||0);persistState();}
-function saveXp(){state.xp=Math.max(0,+document.getElementById('xp').value||0);persistState();}
+function saveXp(){state.xp=Math.max(0,+document.getElementById('xp').value||0);persistState();renderXpInfo();}
+/* ---------- Tabela de XP (XP por nível p/ subir; ver DCC-Tabela-XP.md) ---------- */
+const XP_PER_LEVEL=[0,0,25,30,50,80,130,180,260,350,460,580,730,900,1100,1300,1550,1800,2100,2400,2750,3150,3550,3950,4450,4950,5450,6000,6600,7250,7900,8600,9350,10100,11000,11800,12700,13700,14600,15700,16700,17800,19000,20200,21400,22700,24100,25400,26900,28300,29900,31500,33100,34800,36500,38300,40100,42000,43900,45900,48000,50100,52300,54500,56800,59100,61500,63900,66500,69000,71700,74400,77100,79900,82800,85700,88700,91800,94900,98100,101500,104500,108000,111500,115000,118500,122500,126000,130000,134000,137500,142000,146000,150000,154000,158500,163000,167500,172000,176500,181000];
+const XP_MAXLVL=XP_PER_LEVEL.length-1; // 100
+function xpCumToReach(L){ let t=0; for(let k=2;k<=L;k++)t+=(XP_PER_LEVEL[k]||0); return t; } // XP total p/ chegar ao nível L
+function levelFromXP(xp){ let L=1; while(L<XP_MAXLVL && xp>=xpCumToReach(L+1))L++; return L; }
+function renderXpInfo(){
+  const el=document.getElementById('xpInfo'); if(!el)return;
+  const xp=state.xp||0, lvl=state.level||1, sug=levelFromXP(xp);
+  let txt='';
+  if(sug>=XP_MAXLVL){ txt=`Nível máximo (${XP_MAXLVL}) pelo XP.`; }
+  else { const prox=xpCumToReach(sug+1), falta=Math.max(0,prox-xp);
+    txt=`Nível pelo XP: <b style="color:var(--accent2)">${sug}</b> · faltam <b>${falta.toLocaleString('pt-BR')}</b> XP p/ o nível ${sug+1}`; }
+  if(sug!==lvl)txt+=` <button class="sm" style="padding:1px 7px;font-size:10px;margin-left:6px" onclick="applySuggestedLevel()">aplicar nível ${sug}</button>`;
+  el.innerHTML=txt;
+}
+function applySuggestedLevel(){
+  const sug=levelFromXP(state.xp||0);
+  state.level=sug; document.getElementById('level').value=sug;
+  state.apAvail=apComputed(); persistState(); render();
+}
 /* ---------- companheiros ---------- */
 function addCompanion(){
   state.companions=state.companions||[];
@@ -1575,12 +1596,12 @@ function renderMarket(){
   // ordena por raridade depois preço
   ids.sort((a,b)=>{const ra=RARORDER.indexOf(ofertas[a].rar),rb=RARORDER.indexOf(ofertas[b].rar);return ra-rb||(ofertas[a].cost||0)-(ofertas[b].cost||0);});
   list.innerHTML=ids.map(id=>{
-    const o=ofertas[id]; const r=RAR[o.rar]||RAR.comum; const pay=bopcaPrice(o.cost); const can=(state.gold||0)>=pay;
+    const o=ofertas[id]; const r=RAR[o.rar]||RAR.comum; const pay=bopcaPrice(o.cost); const can=(state.gold||0)>=pay; const q=+o.qty||1;
     const fx=o.fx?`<div class="mfx">${escapeHTML(o.fx)}</div>`:'';
     const priceHTML=disc?`<div class="price"><span style="text-decoration:line-through;color:var(--dim);font-size:11px">${o.cost||0}</span> ${pay} 🪙</div>`:`<div class="price">${pay} 🪙</div>`;
     return `<div class="mkt-item" style="border-left-color:${r.cor}">
-      <div class="mi"><div class="mn">${escapeHTML(o.name||'item')} <span class="lchip" style="background:${r.cor};font-size:9px">${r.nome}</span></div>
-        <div class="mt">${escapeHTML(o.type||'')} · ${SLOTCATNAME[o.cat]||o.cat||''}</div>
+      <div class="mi"><div class="mn">${escapeHTML(o.name||'item')} <span class="lchip" style="background:${r.cor};font-size:9px">${r.nome}</span> <span style="color:var(--accent2);font-weight:800">×${q}</span></div>
+        <div class="mt">${escapeHTML(o.type||'')} · ${SLOTCATNAME[o.cat]||o.cat||''} · ${q} em estoque</div>
         <div class="msd">${cardStatsHTML(o,true)}</div>${fx}</div>
       <div style="text-align:right">${priceHTML}
         <button class="sm primary buy" ${can?'':'disabled'} onclick='buyMarket(${JSON.stringify(id)})'>${can?'Comprar':'Sem ouro'}</button></div>
@@ -1593,11 +1614,11 @@ function buyMarket(id){
   const pay=bopcaPrice(o.cost);
   if((state.gold||0)<pay){toast('Ouro insuficiente.');return;}
   const ref=fbDb.ref('mesas/'+room+'/mercado/ofertas/'+id);
-  // transação: só leva quem chegar primeiro
-  ref.transaction(cur=>{ if(cur===null)return; return null; /* remove a oferta */ }, (err,committed)=>{
+  // transação atômica: decrementa 1 do estoque (remove no último), à prova de compra simultânea
+  ref.transaction(cur=>{ if(!cur)return; const q=+cur.qty||1; if(q<=1)return null; cur.qty=q-1; return cur; }, (err,committed)=>{
     if(err){alert('Falha na compra: '+err.message);return;}
-    if(!committed){toast('Essa oferta já foi vendida por outro jogador.');renderMarket();return;}
-    // committed: conseguimos remover -> a oferta era nossa
+    if(!committed){toast('Esgotado — outro jogador levou a última unidade.');renderMarket();return;}
+    // committed: levamos 1 unidade
     state.gold=(state.gold||0)-pay;
     const card={name:o.name,type:o.type,rar:o.rar,d1:o.d1||0,d2:o.d2||0,d3:o.d3||0,attr:o.attr||'',prec:o.prec||0,def:o.def||0,twoHand:!!o.twoHand,ubd:+o.ubd||0,ubp:+o.ubp||0,fx:o.fx||'',ab:o.ab||null,cost:+o.cost||0,hpb:+o.hpb||0,pmb:+o.pmb||0,inib:+o.inib||0,spm:+o.spm||0,pm:o.pm!=null?+o.pm:null,srcId:o.srcId||''};
     addInvItem(card,o.cat||o.slot||'consumivel',1);
