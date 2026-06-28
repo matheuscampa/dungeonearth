@@ -245,6 +245,26 @@
   .sendbox h3{margin:0 0 4px} .sendbox .subt{font-size:12px;color:var(--dim);margin-bottom:12px}
   .sendlist{display:flex;flex-direction:column;gap:7px;max-height:50vh;overflow:auto}
   .sendlist button{width:100%;text-align:left;padding:10px 12px;font-size:13px}
+  /* abrir caixa + mercado */
+  .box .bopen{margin-top:6px;width:100%;font-size:11px;padding:4px 6px;background:var(--bc);border:none;color:#10131a;font-weight:800;border-radius:7px;cursor:pointer}
+  .box .bopen:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(1)}
+  .lootrow{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--r-comum);border-radius:9px;padding:9px 11px;margin-top:8px}
+  .lootrow .lr{flex:1}
+  .lootrow .ln{font-size:13px;font-weight:800}
+  .lootrow .lt{font-size:11px;color:var(--dim);margin-top:2px}
+  .lootrow .ls{font-size:11px;color:#c2c8d2;margin-top:3px}
+  .lootrow .lfx{font-size:10.5px;color:var(--accent2);margin-top:3px;font-style:italic}
+  .lootrow .lchip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;color:#10131a;white-space:nowrap}
+  .rollbig{font-size:30px;font-weight:900;color:var(--accent2);text-align:center;letter-spacing:1px}
+  .mkt-item{display:flex;gap:10px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--r-comum);border-radius:10px;padding:10px 12px;margin-top:8px}
+  .mkt-item .mi{flex:1}
+  .mkt-item .mn{font-size:13px;font-weight:800}
+  .mkt-item .mt{font-size:11px;color:var(--dim);margin-top:2px}
+  .mkt-item .msd{font-size:11px;color:#c2c8d2;margin-top:3px}
+  .mkt-item .mfx{font-size:10.5px;color:var(--accent2);margin-top:3px;font-style:italic}
+  .mkt-item .price{font-size:15px;font-weight:900;color:var(--accent2);white-space:nowrap;text-align:right}
+  .mkt-item .buy{margin-top:6px;font-size:12px}
+  .mkt-item .buy:disabled{opacity:.4;cursor:not-allowed}
   /* toast */
   #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#16241a;border:1px solid #4caf50;color:#cffcd8;padding:10px 16px;border-radius:10px;font-size:13px;z-index:99999;display:none;box-shadow:0 8px 26px rgba(0,0,0,.5)}
 </style>
@@ -301,11 +321,11 @@
       <div class="charname"><input id="charName" placeholder="Nome do personagem" oninput="save()"></div>
       <div class="lvl"><label>Nível</label><input type="number" id="level" min="1" value="1" oninput="save()">
         <label style="margin-left:8px">XP</label><input type="number" id="xp" min="0" value="0" oninput="saveXp()" style="width:90px" title="XP individual. Subir = 50 × nível (ver Sistema §14.2)"></div>
-      <div class="appoints" title="15 pontos no nível 1. Ao subir de nível: +3/nível até 20, +4 de 21-50, +5 de 51+. Calculado automaticamente: total − pontos já postos nos atributos.">
+      <div class="appoints" title="Nível 1: a soma dos 5 atributos = 15 (mín 1, máx 6 cada). Ao subir de nível: +3/nível até 20, +4 de 21-50, +5 de 51+. Disponível = orçamento − soma atual dos atributos.">
         <span class="apico">🎯</span>
         <div><div class="rk">Pontos de atributo disponíveis</div>
           <span style="display:flex;align-items:center;gap:8px">
-            <input id="apAvail" type="number" value="15" readonly style="width:62px;font-weight:800;cursor:default" title="Automático: aumente um atributo abaixo para gastar.">
+            <input id="apAvail" type="number" value="10" readonly style="width:62px;font-weight:800;cursor:default" title="Automático: aumente um atributo abaixo para gastar.">
             <span class="apnext" id="apNext" style="color:var(--dim);font-size:11px"></span>
           </span></div>
       </div>
@@ -325,7 +345,10 @@
 
   <!-- RECURSOS: OURO + CAIXAS -->
   <div class="panel" style="margin-top:16px">
-    <h2>Recursos</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h2 style="margin:0">Recursos</h2>
+      <button class="sm primary" onclick="openMarket()" title="Mercado do Bopca — comprar itens ofertados pelo Mestre">🏪 Mercado do Bopca <span id="mktBadge" style="display:none;background:#ff5d5d;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px">0</span></button>
+    </div>
     <div class="resources">
       <div class="gold" style="border-color:#5a2f2f">
         <span class="gico">❤</span>
@@ -445,6 +468,37 @@
     <div class="subt" id="sendSub">Escolha o jogador da mesa que vai receber.</div>
     <div class="sendlist" id="sendList"></div>
     <div style="text-align:right;margin-top:12px"><button class="ghost" onclick="closeSend()">Cancelar</button></div>
+  </div>
+</div>
+
+<!-- MODAL: ABRIR CAIXA -->
+<div class="sendmodal" id="boxModal">
+  <div class="sendbox" style="max-width:480px">
+    <h3 id="boxTitle">Abrir Caixa</h3>
+    <div class="subt" id="boxSub">Role o seu 1d100 físico e digite o resultado. O Sistema cuida do resto.</div>
+    <div id="boxInputArea">
+      <label style="font-size:12px;color:var(--dim)">Resultado do 1d100</label>
+      <input id="boxRoll" type="number" min="1" max="100" placeholder="1 a 100" style="width:100%;font-size:22px;font-weight:800;text-align:center;background:var(--panel2);border:1px solid var(--line);color:var(--accent2);border-radius:10px;padding:10px;margin:6px 0 10px" onkeydown="if(event.key==='Enter')doOpenBox()">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#cfd6e0;cursor:pointer">
+        <input type="checkbox" id="boxPremium"> Caixa de Patrocínio (premium: sem sucata · +1 raridade)
+      </label>
+    </div>
+    <div id="boxResult" style="max-height:46vh;overflow:auto"></div>
+    <div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px">
+      <button class="ghost" onclick="closeBox()">Fechar</button>
+      <button class="primary" id="boxGo" onclick="doOpenBox()">🎲 Abrir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MERCADO DO BOPCA -->
+<div class="sendmodal" id="marketModal">
+  <div class="sendbox" style="max-width:560px">
+    <h3>🏪 Mercado do Bopca</h3>
+    <div class="subt" id="marketSub">Itens ofertados pelo Mestre. Comprar desconta o seu ouro na hora.</div>
+    <div style="font-size:12px;color:var(--accent2);margin-bottom:6px">Seu ouro: <b id="marketGold">0</b> 🪙</div>
+    <div id="marketList" style="max-height:55vh;overflow:auto"></div>
+    <div style="text-align:right;margin-top:12px"><button class="ghost" onclick="closeMarket()">Fechar</button></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -699,8 +753,8 @@ function cloudSyncOnConnect(){ // ao conectar: a versão MAIS RECENTE vence (por
     const localT=state.updatedAt||0, cloudT=(data&&data.updatedAt)||0;
     if(data && (cloudT>localT || isDefaultSheet())){ applyCloud(data); } // nuvem mais nova (ou local vazia) → carrega
     else { pushCloud(); }                                               // local mais nova (ou sem nuvem) → publica
-    attachInbox();
-  }).catch(()=>{try{pushCloud();}catch(e){}attachInbox();});
+    attachInbox(); attachMarket();
+  }).catch(()=>{try{pushCloud();}catch(e){}attachInbox();attachMarket();});
 }
 function pullCloud(){ // botão "Puxar ficha" — recuperação manual
   if(!fbDb){alert('Conecte-se à mesa primeiro (📡 Conectar mesa).');return;}
@@ -723,10 +777,11 @@ function persistState(){state.updatedAt=Date.now();localStorage.setItem(KEY,JSON
 
 function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
 function loadCatalog(){try{return JSON.parse(localStorage.getItem(CATKEY))}catch(e){return null}}
-// Pool de pontos de atributo (DERIVADO): 15 no nível 1 + ganhos por nível; desconta o que já foi posto nos atributos.
+// Pool de pontos de atributo (DERIVADO): 15 no nível 1 (a SOMA dos atributos = 15, já incluindo o 1 mínimo de cada)
+// + ganhos por nível. Disponível = orçamento total − soma atual dos atributos.
 const AP_BASE_LV1=15;
 function apTotalEarned(L){let t=AP_BASE_LV1;for(let l=2;l<=(L||1);l++)t+=pointsForLevel(l);return t;}
-function apSpent(){return ATTRS.reduce((a,[s])=>a+(+state.attr[s]||0),0)-ATTRS.length;} // atributos começam em 1 cada
+function apSpent(){return ATTRS.reduce((a,[s])=>a+(+state.attr[s]||0),0);} // a soma dos atributos já inclui os 1s
 function apComputed(){return apTotalEarned(state.level||1)-apSpent();}
 function save(){
   state.name=document.getElementById('charName').value;
@@ -740,7 +795,7 @@ function renderAp(){
   state.apAvail=apComputed();
   const el=document.getElementById('apAvail'); if(el)el.value=state.apAvail;
   if(el)el.style.color=state.apAvail<0?'#ff6b6b':'#8be08b';
-  const nt=document.getElementById('apNext'); if(nt)nt.textContent='nv1 = 15 pts · próx. nível: +'+pointsForLevel((state.level||1)+1);
+  const nt=document.getElementById('apNext'); if(nt)nt.textContent='soma nv1 = 15 · próx. nível: +'+pointsForLevel((state.level||1)+1);
 }
 function updateAttrSqrt(){
   ATTRS.forEach(([s])=>{const el=document.getElementById('sq_'+s); if(el)el.textContent='⌊√⌋ '+isqrt(state.attr[s]);});
@@ -1181,13 +1236,223 @@ function renderCompanions(){
 }
 function changeBox(tier,d){state.boxes[tier]=Math.max(0,(state.boxes[tier]||0)+d);persistState();render();}
 function renderBoxes(){
-  document.getElementById('boxes').innerHTML=BOXES.map(([k,nome,cor])=>`
-    <div class="box" style="--bc:${cor}">
+  document.getElementById('boxes').innerHTML=BOXES.map(([k,nome,cor])=>{
+    const n=state.boxes[k]||0;
+    return `<div class="box" style="--bc:${cor}">
       <div class="bname">${nome}</div>
       <div class="bctrl"><button onclick="changeBox('${k}',-1)">−</button>
-        <span class="bcount">${state.boxes[k]||0}</span>
+        <span class="bcount">${n}</span>
         <button onclick="changeBox('${k}',1)">+</button></div>
-    </div>`).join('');
+      <button class="bopen" ${n>0?'':'disabled'} onclick="promptOpenBox('${k}')">🎁 Abrir</button>
+    </div>`;}).join('');
+}
+
+/* ============================================================
+   ABRIR CAIXAS — Tabela de Loot (1d100 por caixa + 1d12 de tipo)
+   ============================================================ */
+const RARORDER=['comum','incomum','raro','epico','lendario','celestial'];
+const BOX_DEF={
+  bronze:{label:'Bronze',color:'#cd7f32',rows:[
+    {lo:1,hi:15,kind:'gold',dice:1,note:'Sucata'},{lo:16,hi:75,kind:'comum'},
+    {lo:76,hi:95,kind:'incomum'},{lo:96,hi:99,kind:'raro'},{lo:100,hi:100,kind:'jackpot',to:'prata'}]},
+  prata:{label:'Prata',color:'#c4cdd6',rows:[
+    {lo:1,hi:10,kind:'gold',dice:2,note:'Sucata'},{lo:11,hi:55,kind:'comum'},
+    {lo:56,hi:85,kind:'incomum'},{lo:86,hi:97,kind:'raro'},{lo:98,hi:99,kind:'epico'},{lo:100,hi:100,kind:'jackpot',to:'ouro'}]},
+  ouro:{label:'Ouro',color:'#ffcf3f',rows:[
+    {lo:1,hi:8,kind:'gold',dice:3,note:'Ouro'},{lo:9,hi:40,kind:'incomum'},
+    {lo:41,hi:75,kind:'raro'},{lo:76,hi:93,kind:'epico'},{lo:94,hi:99,kind:'lendario'},{lo:100,hi:100,kind:'jackpot',to:'platina'}]},
+  platina:{label:'Platina',color:'#8fe0ff',rows:[
+    {lo:1,hi:5,kind:'gold',dice:5,note:'Ouro'},{lo:6,hi:30,kind:'raro'},
+    {lo:31,hi:70,kind:'epico'},{lo:71,hi:95,kind:'lendario'},{lo:96,hi:99,kind:'celestial'},{lo:100,hi:100,kind:'jackpot',to:'lendaria'}]},
+  lendaria:{label:'Lendária',color:'#ff8a2a',rows:[
+    {lo:1,hi:30,kind:'epico'},{lo:31,hi:78,kind:'lendario'},
+    {lo:79,hi:98,kind:'celestial'},{lo:99,hi:100,kind:'jackpot',celestialPlus:true}]},
+  divina:{label:'Divina',color:'#ffffff',rows:[
+    {lo:1,hi:40,kind:'lendario'},{lo:41,hi:90,kind:'celestial'},{lo:91,hi:100,kind:'jackpot',celestialPlus:true}]}
+};
+const TYPE_TABLE=[
+  {lo:1,hi:4,label:'Consumível',slots:['consumivel']},
+  {lo:5,hi:6,label:'Arma',slots:['mao'],weapon:true},
+  {lo:7,hi:8,label:'Acessório',slots:['acessorio']},
+  {lo:9,hi:9,label:'Escudo',slots:['mao'],shield:true},
+  {lo:10,hi:10,label:'Cabeça/Elmo',slots:['cabeca']},
+  {lo:11,hi:11,label:'Peito',slots:['camiseta','armadura']},
+  {lo:12,hi:12,label:'Pernas/Pés',slots:['calca','calcado','roupabaixo']}
+];
+function rollDie(n){return Math.floor(Math.random()*n)+1;}
+function rowFor(tier,roll){return BOX_DEF[tier].rows.find(r=>roll>=r.lo&&roll<=r.hi);}
+function bumpRar(r){const i=RARORDER.indexOf(r);return RARORDER[Math.min(i+1,RARORDER.length-1)];}
+function pickItemByRarType(rar,typeRow){
+  let pool;
+  if(typeRow.shield){pool=catalog.filter(i=>i.rar===rar&&i.slot==='mao'&&!((i.d1||0)||(i.d2||0)||(i.d3||0))&&(i.def||0)>0);}
+  else{pool=catalog.filter(i=>i.rar===rar&&typeRow.slots.includes(i.slot));
+       if(typeRow.weapon)pool=pool.filter(i=>((i.d1||0)||(i.d2||0)||(i.d3||0))>0);}
+  if(!pool.length)pool=catalog.filter(i=>i.rar===rar); // sem item do tipo nessa raridade -> qualquer item da raridade
+  if(!pool.length){ // raridade vazia no catálogo -> desce de raridade até achar
+    let idx=RARORDER.indexOf(rar);
+    while(idx>0&&!pool.length){idx--;pool=catalog.filter(i=>i.rar===RARORDER[idx]);}
+  }
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
+}
+// resolve uma caixa para o log; chained jackpots com guarda de profundidade
+function resolveBox(tier,roll,premium,log,depth){
+  depth=depth||0; if(depth>10)return;
+  let row=rowFor(tier,roll);
+  if(!row){log.push({kind:'erro',msg:'Resultado fora da tabela.'});return;}
+  // premium nunca dá sucata: se cair em ouro, vira a menor faixa de item da caixa
+  if(premium&&row.kind==='gold'){
+    const itemRow=BOX_DEF[tier].rows.find(r=>RARORDER.includes(r.kind));
+    if(itemRow)row=itemRow;
+  }
+  if(row.kind==='gold'){
+    let g=0;for(let i=0;i<row.dice;i++)g+=rollDie(10);
+    state.gold=(state.gold||0)+g;
+    log.push({kind:'gold',amount:g,note:row.note,tier});
+    return;
+  }
+  if(row.kind==='jackpot'){
+    if(row.to){ // sobe de tier e abre a caixa melhor na hora
+      const nr=rollDie(100);
+      log.push({kind:'jackpot',msg:'JACKPOT! A caixa '+BOX_DEF[tier].label+' virou '+BOX_DEF[row.to].label+' — abrindo (1d100='+nr+')'});
+      resolveBox(row.to,nr,premium,log,depth+1);
+    }else if(row.celestialPlus){ // garante celestial + rola um 2º item
+      log.push({kind:'jackpot',msg:'JACKPOT! Celestial garantido + um 2º item.'});
+      awardItem('celestial',premium,log,tier,100);
+      const nr=rollDie(100);
+      log.push({kind:'info',msg:'2º item (1d100='+nr+')'});
+      resolveBox(tier,nr,premium,log,depth+1);
+    }
+    return;
+  }
+  // faixa de raridade -> rola tipo e sorteia item
+  awardItem(row.kind,premium,log,tier,roll);
+}
+function awardItem(rar,premium,log,tier,d100){
+  if(premium)rar=bumpRar(rar);
+  const tRoll=rollDie(12);
+  const typeRow=TYPE_TABLE.find(r=>tRoll>=r.lo&&tRoll<=r.hi);
+  const it=pickItemByRarType(rar,typeRow);
+  if(!it){log.push({kind:'erro',msg:'Sem item de raridade '+rar+' no catálogo.'});return;}
+  const card=cardFromCatalog(it);
+  addInvItem(card,it.slot,1);
+  log.push({kind:'item',item:card,slot:it.slot,rar:it.rar,type1d12:tRoll,typeLabel:typeRow.label,d100:d100,tier});
+}
+let _openTier=null;
+function promptOpenBox(tier){
+  if(!(state.boxes[tier]>0)){toast('Você não tem caixa '+(BOX_DEF[tier]?BOX_DEF[tier].label:tier)+'.');return;}
+  if(!catalog.length){alert('Catálogo de itens não carregado — não dá pra sortear o loot. Carregue o catálogo no topo.');return;}
+  _openTier=tier;
+  document.getElementById('boxTitle').textContent='Abrir Caixa '+BOX_DEF[tier].label;
+  document.getElementById('boxSub').textContent='Você tem '+state.boxes[tier]+'. Role o 1d100 físico e digite o resultado.';
+  document.getElementById('boxResult').innerHTML='';
+  document.getElementById('boxInputArea').style.display='block';
+  document.getElementById('boxGo').style.display='inline-block';
+  document.getElementById('boxRoll').value='';
+  document.getElementById('boxPremium').checked=false;
+  document.getElementById('boxModal').classList.add('show');
+  setTimeout(()=>document.getElementById('boxRoll').focus(),50);
+}
+function doOpenBox(){
+  const tier=_openTier; if(!tier)return;
+  const roll=parseInt(document.getElementById('boxRoll').value,10);
+  if(!(roll>=1&&roll<=100)){alert('Digite o resultado do 1d100 (1 a 100).');return;}
+  if(!(state.boxes[tier]>0)){toast('Sem caixas desse tier.');closeBox();return;}
+  const premium=document.getElementById('boxPremium').checked;
+  state.boxes[tier]=Math.max(0,(state.boxes[tier]||0)-1);
+  const log=[];
+  resolveBox(tier,roll,premium,log,0);
+  persistState();render();
+  renderBoxResult(roll,log);
+}
+function renderBoxResult(roll,log){
+  document.getElementById('boxInputArea').style.display='none';
+  document.getElementById('boxGo').style.display='none';
+  const items=log.filter(l=>l.kind==='item').length, gold=log.filter(l=>l.kind==='gold').reduce((a,b)=>a+b.amount,0);
+  let html='<div class="rollbig">🎲 '+roll+'</div>';
+  html+=log.map(l=>{
+    if(l.kind==='gold')return `<div class="lootrow" style="--r-comum:#ffcf3f"><div class="lr"><div class="ln">🪙 ${l.note||'Ouro'}: +${l.amount} de ouro</div><div class="lt">Caixa ${BOX_DEF[l.tier].label}</div></div></div>`;
+    if(l.kind==='jackpot')return `<div class="lootrow" style="border-left-color:#ff8a2a"><div class="lr"><div class="ln" style="color:#ffcf3f">⭐ ${escapeHTML(l.msg)}</div></div></div>`;
+    if(l.kind==='info')return `<div class="lt" style="margin-top:8px;color:var(--dim)">${escapeHTML(l.msg)}</div>`;
+    if(l.kind==='erro')return `<div class="lootrow"><div class="lr"><div class="ln" style="color:#ff8a8a">⚠ ${escapeHTML(l.msg)}</div></div></div>`;
+    const r=RAR[l.item.rar]||RAR.comum;
+    const fx=l.item.fx?`<div class="lfx">${escapeHTML(l.item.fx)}</div>`:'';
+    return `<div class="lootrow" style="border-left-color:${r.cor}">
+      <div class="lr"><div class="ln">${escapeHTML(l.item.name)}</div>
+        <div class="lt">${escapeHTML(l.item.type||'')} · ${SLOTCATNAME[l.slot]||l.slot} · tipo 1d12=${l.type1d12} (${l.typeLabel})</div>
+        <div class="ls">${cardStatsHTML(l.item)}</div>${fx}</div>
+      <span class="lchip" style="background:${r.cor}">${r.nome}</span></div>`;
+  }).join('');
+  html+=`<div class="lt" style="margin-top:12px;color:#7be07b">✓ Adicionado ao inventário: ${items} item(ns)${gold?' · +'+gold+' ouro':''}.</div>`;
+  if(state.boxes[_openTier]>0)html+=`<div style="text-align:center;margin-top:10px"><button class="primary" onclick="promptOpenBox('${_openTier}')">Abrir outra ${BOX_DEF[_openTier].label} (${state.boxes[_openTier]})</button></div>`;
+  document.getElementById('boxResult').innerHTML=html;
+}
+function closeBox(){document.getElementById('boxModal').classList.remove('show');_openTier=null;}
+
+/* ============================================================
+   MERCADO DO BOPCA — ofertas publicadas pelo Mestre
+   ============================================================ */
+let _market={ofertas:{},andar:1};
+let _mktAttached=false;
+function attachMarket(){
+  if(!fbDb)return; const room=localStorage.getItem(ROOMKEY); if(!room)return;
+  if(_mktAttached)return; _mktAttached=true;
+  fbDb.ref('mesas/'+room+'/mercado').on('value',snap=>{
+    _market=snap.val()||{ofertas:{},andar:1};
+    if(!_market.ofertas)_market.ofertas={};
+    updateMarketBadge();
+    if(document.getElementById('marketModal').classList.contains('show'))renderMarket();
+  });
+}
+function updateMarketBadge(){
+  const n=Object.keys(_market.ofertas||{}).length;
+  const b=document.getElementById('mktBadge');
+  if(b){b.textContent=n;b.style.display=n?'inline-block':'none';}
+}
+function openMarket(){
+  if(!fbDb){alert('Conecte-se à mesa primeiro (📡 Conectar mesa) para ver o Mercado do Bopca.');return;}
+  attachMarket();
+  document.getElementById('marketModal').classList.add('show');
+  renderMarket();
+}
+function closeMarket(){document.getElementById('marketModal').classList.remove('show');}
+function renderMarket(){
+  document.getElementById('marketGold').textContent=state.gold||0;
+  document.getElementById('marketSub').textContent='Mercado do Andar '+(_market.andar||1)+' — comprar desconta o seu ouro na hora. As ofertas são compartilhadas (quem comprar primeiro leva).';
+  const list=document.getElementById('marketList');
+  const ofertas=_market.ofertas||{};
+  const ids=Object.keys(ofertas);
+  if(!ids.length){list.innerHTML='<div class="inv-empty">Nenhuma oferta no momento. O Mestre ainda não abriu o mercado deste andar.</div>';return;}
+  // ordena por raridade depois preço
+  ids.sort((a,b)=>{const ra=RARORDER.indexOf(ofertas[a].rar),rb=RARORDER.indexOf(ofertas[b].rar);return ra-rb||(ofertas[a].cost||0)-(ofertas[b].cost||0);});
+  list.innerHTML=ids.map(id=>{
+    const o=ofertas[id]; const r=RAR[o.rar]||RAR.comum; const can=(state.gold||0)>=(o.cost||0);
+    const fx=o.fx?`<div class="mfx">${escapeHTML(o.fx)}</div>`:'';
+    return `<div class="mkt-item" style="border-left-color:${r.cor}">
+      <div class="mi"><div class="mn">${escapeHTML(o.name||'item')} <span class="lchip" style="background:${r.cor};font-size:9px">${r.nome}</span></div>
+        <div class="mt">${escapeHTML(o.type||'')} · ${SLOTCATNAME[o.cat]||o.cat||''}</div>
+        <div class="msd">${cardStatsHTML(o)}</div>${fx}</div>
+      <div style="text-align:right"><div class="price">${o.cost||0} 🪙</div>
+        <button class="sm primary buy" ${can?'':'disabled'} onclick='buyMarket(${JSON.stringify(id)})'>${can?'Comprar':'Sem ouro'}</button></div>
+    </div>`;
+  }).join('');
+}
+function buyMarket(id){
+  const room=localStorage.getItem(ROOMKEY); if(!room||!fbDb){alert('Conecte-se à mesa.');return;}
+  const o=(_market.ofertas||{})[id]; if(!o){toast('Essa oferta já foi vendida.');renderMarket();return;}
+  if((state.gold||0)<(o.cost||0)){toast('Ouro insuficiente.');return;}
+  const ref=fbDb.ref('mesas/'+room+'/mercado/ofertas/'+id);
+  // transação: só leva quem chegar primeiro
+  ref.transaction(cur=>{ if(cur===null)return; return null; /* remove a oferta */ }, (err,committed)=>{
+    if(err){alert('Falha na compra: '+err.message);return;}
+    if(!committed){toast('Essa oferta já foi vendida por outro jogador.');renderMarket();return;}
+    // committed: conseguimos remover -> a oferta era nossa
+    state.gold=(state.gold||0)-(o.cost||0);
+    const card={name:o.name,type:o.type,rar:o.rar,d1:o.d1||0,d2:o.d2||0,d3:o.d3||0,attr:o.attr||'',prec:o.prec||0,def:o.def||0,twoHand:!!o.twoHand,ubd:+o.ubd||0,ubp:+o.ubp||0,fx:o.fx||'',srcId:o.srcId||''};
+    addInvItem(card,o.cat||o.slot||'consumivel',1);
+    persistState();render();
+    toast('🛒 Comprou: '+(o.name||'item')+' por '+(o.cost||0)+' ouro.');
+    renderMarket();
+  });
 }
 
 /* ---------- ficha import/export/reset ---------- */

@@ -153,8 +153,15 @@
   </div>
 
   <div class="gmbar">
+    <div class="gmbox"><span class="lbl">Andar</span>
+      <input type="number" id="gmAndar" min="1" value="1" onchange="setAndar(this.value)" title="Andar atual da masmorra — define o tier de loot e o nível do Mercado do Bopca">
+    </div>
     <div class="gmbox"><span class="lbl">Colapso do andar</span><div class="colpips" id="gmColapso"></div></div>
-    <div class="gmbox"><span class="lbl" style="color:var(--dim)">XP é individual — controle pelo card de cada jogador (campo XP).</span></div>
+    <div class="gmbox" style="border-left:1px solid var(--line);padding-left:14px">
+      <button class="primary" onclick="openBopca()" title="Gera uma oferta balanceada de itens para o andar atual e publica para os jogadores">🏪 Abrir Mercado do Bopca</button>
+      <button class="sm" onclick="clearBopca()" title="Limpar todas as ofertas do mercado">🧹 Limpar</button>
+      <span class="lbl" id="bopcaStatus" style="color:var(--dim)"></span>
+    </div>
   </div>
 
   <div class="tabs">
@@ -270,7 +277,7 @@ const SLOTLABEL={maoE:'Mão Esq.',maoD:'Mão Dir.',cabeca:'Cabeça',camiseta:'Ca
 const SLOTORDER=['maoE','maoD','cabeca','camiseta','armadura','roupabaixo','calca','calcado','acc1','acc2','acc3','acc4','acc5'];
 const FBKEY='dcc_fb_cfg', ROOMKEY='dcc_mestre_room';
 let fbApp=null, fbDb=null, currentRef=null, gmRef=null;
-let gmState={nivel:1,xp:0,xpAlvo:300,colapso:0};
+let gmState={nivel:1,xp:0,xpAlvo:300,colapso:0,andar:1};
 const COL_PIPS=6;
 const isqrt=x=>Math.floor(Math.sqrt(Math.max(0,x)));
 function escapeHTML(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
@@ -303,12 +310,66 @@ function connectCloud(){
 }
 /* ---------- trackers do Mestre (XP + colapso), salvos em mesas/<sala>/mestre ---------- */
 function renderGm(data){
-  if(data){gmState=Object.assign({colapso:0},data);}
+  if(data){gmState=Object.assign({colapso:0,andar:1},data);}
   const pc=document.getElementById('gmColapso');
   if(pc){let h='';for(let i=1;i<=COL_PIPS;i++){const on=(gmState.colapso||0)>=i;h+=`<div class="colpip ${on?'on':''}" title="Colapso ${i}/${COL_PIPS}" onclick="setColapso(${(gmState.colapso||0)===i?i-1:i})"></div>`;}pc.innerHTML=h;}
+  const an=document.getElementById('gmAndar'); if(an&&document.activeElement!==an)an.value=gmState.andar||1;
 }
 function pushGm(){ if(gmRef)gmRef.set(gmState); }
 function setColapso(n){ gmState.colapso=Math.max(0,Math.min(COL_PIPS,n)); renderGm(); pushGm(); }
+function setAndar(v){ gmState.andar=Math.max(1,parseInt(v,10)||1); renderGm(); pushGm(); }
+
+/* ============================================================
+   MERCADO DO BOPCA — gera oferta balanceada por andar e publica
+   ============================================================ */
+const RARORDER=['comum','incomum','raro','epico','lendario','celestial'];
+const TIER_LABEL=['Bronze','Prata','Ouro','Platina','Lendária','Divina'];
+// andar -> índice de raridade central (1:1: A1 Comum … A6+ Celestial)
+function centerRarIdx(andar){ return Math.min(Math.max((andar||1)-1,0), RARORDER.length-1); }
+// distribuição de pesos ao redor do centro (offset: peso)
+const RAR_SPREAD=[[-2,1],[-1,3],[0,5],[1,2]];
+function weightedRarForAndar(andar){
+  const c=centerRarIdx(andar); const bag=[];
+  RAR_SPREAD.forEach(([off,w])=>{const idx=c+off; if(idx>=0&&idx<RARORDER.length)for(let i=0;i<w;i++)bag.push(RARORDER[idx]);});
+  return bag[Math.floor(Math.random()*bag.length)];
+}
+function marketCount(andar){ const base=6+Math.floor((andar||1)/2); return Math.min(12, base+ (Math.floor(Math.random()*3)-1)); } // base ±1, teto 12
+function pickItemOfRar(rar){
+  let pool=ITEM_CAT.filter(i=>i.rar===rar);
+  if(!pool.length){ let idx=RARORDER.indexOf(rar); while(idx>0&&!pool.length){idx--;pool=ITEM_CAT.filter(i=>i.rar===RARORDER[idx]);} }
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
+}
+function openBopca(){
+  const room=localStorage.getItem(ROOMKEY);
+  if(!fbDb||!room){alert('Conecte-se à mesa primeiro (📡 Conectar mesa).');return;}
+  if(!ITEM_CAT.length){alert('Catálogo de itens ainda não carregou. Aguarde um instante e tente de novo.');return;}
+  const andar=gmState.andar||1;
+  const n=marketCount(andar);
+  const ofertas={}; const usados={}; let tries=0;
+  while(Object.keys(ofertas).length<n && tries<n*8){
+    tries++;
+    const rar=weightedRarForAndar(andar);
+    const it=pickItemOfRar(rar); if(!it)continue;
+    if(usados[it.id]&&Object.keys(ofertas).length<ITEM_CAT.length)continue; // evita repetir enquanto houver opções
+    usados[it.id]=1;
+    const oid='o_'+Math.random().toString(36).slice(2,9);
+    ofertas[oid]={id:it.id,srcId:it.id,name:it.name,type:it.type||'',rar:it.rar,slot:it.slot,cat:it.slot,
+      d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,
+      twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',cost:it.cost||0};
+  }
+  const payload={andar:andar,geradoEm:Date.now(),ofertas:ofertas};
+  fbDb.ref('mesas/'+room+'/mercado').set(payload).then(()=>{
+    const st=document.getElementById('bopcaStatus');
+    if(st)st.textContent='✓ '+Object.keys(ofertas).length+' itens ofertados (Andar '+andar+' · '+TIER_LABEL[centerRarIdx(andar)]+')';
+  }).catch(e=>alert('Falha ao publicar o mercado: '+e.message));
+}
+function clearBopca(){
+  const room=localStorage.getItem(ROOMKEY);
+  if(!fbDb||!room){alert('Conecte-se à mesa primeiro.');return;}
+  if(!confirm('Limpar todas as ofertas do Mercado do Bopca?'))return;
+  fbDb.ref('mesas/'+room+'/mercado').set({andar:gmState.andar||1,geradoEm:Date.now(),ofertas:{}})
+    .then(()=>{const st=document.getElementById('bopcaStatus');if(st)st.textContent='Mercado limpo.';});
+}
 
 function cardStats(c){
   const dmg=(c.d1||c.d2||c.d3)?`<span class="dmg">${c.d1||0}/${c.d2||0}/${c.d3||0}</span>${c.attr?' ['+c.attr+']':''} `:'';
