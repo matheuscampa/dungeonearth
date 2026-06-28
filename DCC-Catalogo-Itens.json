@@ -1,8 +1,8 @@
 {
   "catalogo": "Dungeon Crawler Carl — Baralho de Loot",
-  "versao": 8,
+  "versao": 9,
   "atualizadoEm": "2026-06-28",
-  "notas": "Faixas de dano = Baixa/Média/Alta. Itens com dano trazem dtype (tipo de dano: Físico/Fogo/Gelo/Raio/Ácido/Arcano/Radiante/Explosivo) para as regras de Resistência (Sistema §6A). Consumíveis usam slot 'consumivel'. Gear de luta desarmada usa ubd/ubp (bônus no ataque Desarmado). | v7: campo \"cost\" (preço em ouro p/ Mercado do Bopca) em todos os itens. Fórmula: base por raridade × (1 + 0.04·d3 + 0.12·def + 0.18·prec), consumível ×0.6, arredondado. | v8: +100 itens novos e criativos (foco em varinhas e cajados). Novo campo \"ab\" = bônus de atributo (FOR/DEX/CON/INT/CHA) aplicado quando o item está EQUIPADO; entra em HP, Mana, Defesa, Iniciativa e dano dos ataques. Consumíveis usam efeitos temporários no fx (não usam \"ab\").",
+  "notas": "Faixas de dano = Baixa/Média/Alta. Itens com dano trazem dtype (tipo de dano: Físico/Fogo/Gelo/Raio/Ácido/Arcano/Radiante/Explosivo) para as regras de Resistência (Sistema §6A). Consumíveis usam slot 'consumivel'. Gear de luta desarmada usa ubd/ubp (bônus no ataque Desarmado). | v7: campo \"cost\" (preço em ouro p/ Mercado do Bopca) em todos os itens. Fórmula: base por raridade × (1 + 0.04·d3 + 0.12·def + 0.18·prec), consumível ×0.6, arredondado. | v8: +100 itens novos e criativos (foco em varinhas e cajados). Novo campo \"ab\" = bônus de atributo (FOR/DEX/CON/INT/CHA) aplicado quando o item está EQUIPADO; entra em HP, Mana, Defesa, Iniciativa e dano dos ataques. Consumíveis usam efeitos temporários no fx (não usam \"ab\"). | v9: efeitos sempre-ativos estruturados a partir do texto — pmb (PM máx), hpb (HP máx), inib (Iniciativa), spm (desconto de PM em spells). Aplicados automaticamente quando o item está equipado.",
   "itens": [
     {
       "id": "wm-faca",
@@ -576,7 +576,8 @@
       "def": 4,
       "twoHand": false,
       "fx": "Ocupa uma mão. −1 Iniciativa (aplique manualmente).",
-      "cost": 45
+      "cost": 45,
+      "inib": -1
     },
     {
       "id": "es-riot",
@@ -816,7 +817,8 @@
       "def": 4,
       "twoHand": false,
       "fx": "−1 Iniciativa (aplique manualmente).",
-      "cost": 45
+      "cost": 45,
+      "inib": -1
     },
     {
       "id": "ar-balistico",
@@ -1560,7 +1562,8 @@
       "def": 5,
       "twoHand": false,
       "fx": "−1 na Iniciativa (aplique manualmente).",
-      "cost": 125
+      "cost": 125,
+      "inib": -1
     },
     {
       "id": "a-peledeus",
@@ -1640,7 +1643,8 @@
       "def": 2,
       "twoHand": false,
       "fx": "−1 na Iniciativa (aplique manualmente).",
-      "cost": 35
+      "cost": 35,
+      "inib": -1
     },
     {
       "id": "p-velocista",
@@ -1656,7 +1660,8 @@
       "def": 1,
       "twoHand": false,
       "fx": "+1 na Iniciativa (aplique manualmente).",
-      "cost": 85
+      "cost": 85,
+      "inib": 1
     },
     {
       "id": "b-furadas",
@@ -2588,7 +2593,8 @@
       "def": 0,
       "twoHand": false,
       "fx": "+20 HP máximo.",
-      "cost": 75
+      "cost": 75,
+      "hpb": 20
     },
     {
       "id": "ac-luvaladino",
@@ -3148,7 +3154,8 @@
       "ab": {
         "INT": 6,
         "CHA": 2
-      }
+      },
+      "spm": 1
     },
     {
       "id": "w-varinha-da-primeira-cena",
@@ -3376,7 +3383,8 @@
       "ab": {
         "INT": 5,
         "CHA": 2
-      }
+      },
+      "pmb": 6
     },
     {
       "id": "w-cajado-das-mares-antigas",
@@ -4103,7 +4111,8 @@
       "ab": {
         "INT": 3,
         "CHA": 1
-      }
+      },
+      "pmb": 3
     },
     {
       "id": "ac-selo-do-pacto-apertado",
@@ -4310,7 +4319,8 @@
       "ab": {
         "INT": 7,
         "CON": 2
-      }
+      },
+      "pmb": 10
     },
     {
       "id": "ac-lagrima-da-primeira-estacao",
@@ -4655,7 +4665,8 @@
       "ab": {
         "INT": 4,
         "CHA": 2
-      }
+      },
+      "pmb": 5
     },
     {
       "id": "ar-carapaca-do-colosso-de-arena",
@@ -4859,7 +4870,8 @@
       "ab": {
         "DEX": 4,
         "CON": 2
-      }
+      },
+      "inib": 2
     },
     {
       "id": "lg-perneiras-do-gigante-gentil",
@@ -4905,7 +4917,8 @@
       "ab": {
         "INT": 3,
         "CHA": 2
-      }
+      },
+      "pmb": 4
     },
     {
       "id": "ft-botas-do-relampago-personifi",

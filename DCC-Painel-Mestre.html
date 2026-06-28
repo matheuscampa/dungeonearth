@@ -387,7 +387,7 @@ function openBopca(){
     const oid='o_'+Math.random().toString(36).slice(2,9);
     ofertas[oid]={id:it.id,srcId:it.id,name:it.name,type:it.type||'',rar:it.rar,slot:it.slot,cat:it.slot,
       d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,
-      twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',ab:it.ab||null,cost:it.cost||0};
+      twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',ab:it.ab||null,hpb:+it.hpb||0,pmb:+it.pmb||0,inib:+it.inib||0,spm:+it.spm||0,pm:it.pm!=null?+it.pm:null,cost:it.cost||0};
   }
   const payload={andar:andar,geradoEm:Date.now(),ofertas:ofertas};
   fbDb.ref('mesas/'+room+'/mercado').set(payload).then(()=>{
@@ -414,7 +414,7 @@ function attachMarketAdmin(){
 function offerFromItem(it){
   return {id:it.id,srcId:it.id,name:it.name,type:it.type||'',rar:it.rar,slot:it.slot,cat:it.slot,
     d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,
-    twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',ab:it.ab||null,cost:it.cost||0};
+    twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',ab:it.ab||null,hpb:+it.hpb||0,pmb:+it.pmb||0,inib:+it.inib||0,spm:+it.spm||0,pm:it.pm!=null?+it.pm:null,cost:it.cost||0};
 }
 function addToMarket(id){
   const room=localStorage.getItem(ROOMKEY); if(!fbDb||!room){alert('Conecte-se à mesa primeiro.');return;}
@@ -490,11 +490,15 @@ function abStr(ab){
   const p=['FOR','DEX','CON','INT','CHA'].filter(k=>+ab[k]).map(k=>'+'+ab[k]+' '+k);
   return p.length?` <span style="color:#8be08b;font-weight:700">${p.join(' ')}</span>`:'';
 }
+function effStr(c){
+  const p=[]; if(+c.hpb)p.push((c.hpb>0?'+':'')+c.hpb+' HP'); if(+c.pmb)p.push((c.pmb>0?'+':'')+c.pmb+' PM'); if(+c.inib)p.push((c.inib>0?'+':'')+c.inib+' Ini'); if(+c.spm)p.push('−'+c.spm+' PMspell');
+  return p.length?` <span style="color:#8be08b;font-weight:700">${p.join(' ')}</span>`:'';
+}
 function cardStats(c){
   const dmg=(c.d1||c.d2||c.d3)?`<span class="dmg">${c.d1||0}/${c.d2||0}/${c.d3||0}</span>${c.attr?' ['+c.attr+']':''} `:'';
   const prec=c.prec?`P+${c.prec} `:'';
   const def=c.def?`<span class="def">D+${c.def}</span>`:'';
-  return dmg+prec+def+abStr(c.ab);
+  return dmg+prec+def+abStr(c.ab)+effStr(c);
 }
 const BOXES=[['bronze','Bronze','#cd7f32'],['prata','Prata','#c4cdd6'],['ouro','Ouro','#ffcf3f'],['platina','Platina','#8fe0ff'],['lendaria','Lendária','#ff8a2a'],['divina','Divina','#ffffff']];
 function invHTML(inv){
