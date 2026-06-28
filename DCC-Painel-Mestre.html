@@ -169,6 +169,7 @@
     <button class="tab-btn" data-tab="monstros" onclick="showTab('monstros')">🐲 Monstros</button>
     <button class="tab-btn" data-tab="skills" onclick="showTab('skills')">✨ Skills</button>
     <button class="tab-btn" data-tab="itens" onclick="showTab('itens')">🎒 Itens</button>
+    <button class="tab-btn" data-tab="mercado" onclick="showTab('mercado')">🏪 Mercado</button>
     <button class="tab-btn" data-tab="conquistas" onclick="showTab('conquistas')">🏆 Conquistas</button>
   </div>
 
@@ -225,6 +226,35 @@
       </div>
       <div class="count" id="itCount">Carregando catálogo de itens…</div>
       <div class="blist" id="itList"></div>
+    </div>
+  </div>
+
+  <div class="tab" id="tab-mercado">
+    <div class="browser">
+      <div class="filters" style="justify-content:space-between">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="primary" onclick="openBopca()">🎲 Gerar oferta (Andar <span id="mktAdmAndar">1</span>)</button>
+          <button class="sm" onclick="clearBopca()">🧹 Limpar tudo</button>
+        </div>
+        <span class="count" id="mktAdmCount" style="margin:0">Conecte-se à mesa para ver o mercado.</span>
+      </div>
+      <div id="mktOffers" class="blist" style="margin-bottom:18px"></div>
+      <h3 style="font-size:14px;color:var(--accent2);margin:6px 0 8px;border-top:1px solid var(--line);padding-top:14px">➕ Adicionar item manualmente</h3>
+      <div class="filters">
+        <input type="text" id="mktSearch" placeholder="Buscar item para ofertar…" oninput="renderMktPicker()">
+        <select id="mktSlot" onchange="renderMktPicker()" style="background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:7px;padding:7px 8px;font-size:12px"></select>
+      </div>
+      <div class="filters" id="mktRarChips">
+        <span class="chip on" data-rar="" onclick="setMktRar(this,'')">Todas raridades</span>
+        <span class="chip" data-rar="comum" onclick="setMktRar(this,'comum')">Comum</span>
+        <span class="chip" data-rar="incomum" onclick="setMktRar(this,'incomum')">Incomum</span>
+        <span class="chip" data-rar="raro" onclick="setMktRar(this,'raro')">Raro</span>
+        <span class="chip" data-rar="epico" onclick="setMktRar(this,'epico')">Épico</span>
+        <span class="chip" data-rar="lendario" onclick="setMktRar(this,'lendario')">Lendário</span>
+        <span class="chip" data-rar="celestial" onclick="setMktRar(this,'celestial')">Celestial</span>
+      </div>
+      <div class="count" id="mktPickCount"></div>
+      <div class="blist" id="mktPickList"></div>
     </div>
   </div>
 
@@ -306,6 +336,7 @@ function connectCloud(){
     gmRef=fbDb.ref('mesas/'+room+'/mestre');
     gmRef.on('value',snap=>renderGm(snap.val()));
     pushOcultos();
+    attachMarketAdmin();
   }catch(e){setStatus('erro de conexão',false);alert('Falha: '+e.message);}
 }
 /* ---------- trackers do Mestre (XP + colapso), salvos em mesas/<sala>/mestre ---------- */
@@ -314,6 +345,7 @@ function renderGm(data){
   const pc=document.getElementById('gmColapso');
   if(pc){let h='';for(let i=1;i<=COL_PIPS;i++){const on=(gmState.colapso||0)>=i;h+=`<div class="colpip ${on?'on':''}" title="Colapso ${i}/${COL_PIPS}" onclick="setColapso(${(gmState.colapso||0)===i?i-1:i})"></div>`;}pc.innerHTML=h;}
   const an=document.getElementById('gmAndar'); if(an&&document.activeElement!==an)an.value=gmState.andar||1;
+  const aa=document.getElementById('mktAdmAndar'); if(aa)aa.textContent=gmState.andar||1;
 }
 function pushGm(){ if(gmRef)gmRef.set(gmState); }
 function setColapso(n){ gmState.colapso=Math.max(0,Math.min(COL_PIPS,n)); renderGm(); pushGm(); }
@@ -369,6 +401,88 @@ function clearBopca(){
   if(!confirm('Limpar todas as ofertas do Mercado do Bopca?'))return;
   fbDb.ref('mesas/'+room+'/mercado').set({andar:gmState.andar||1,geradoEm:Date.now(),ofertas:{}})
     .then(()=>{const st=document.getElementById('bopcaStatus');if(st)st.textContent='Mercado limpo.';});
+}
+
+/* ---------- Aba Mercado: ver ofertas ao vivo + adicionar/editar/remover ---------- */
+let mktRef=null, MARKET={andar:1,ofertas:{}}, mktRar='';
+function attachMarketAdmin(){
+  const room=localStorage.getItem(ROOMKEY); if(!fbDb||!room)return;
+  if(mktRef)mktRef.off();
+  mktRef=fbDb.ref('mesas/'+room+'/mercado');
+  mktRef.on('value',snap=>{ MARKET=snap.val()||{andar:gmState.andar||1,ofertas:{}}; if(!MARKET.ofertas)MARKET.ofertas={}; renderMarketAdmin(); });
+}
+function offerFromItem(it){
+  return {id:it.id,srcId:it.id,name:it.name,type:it.type||'',rar:it.rar,slot:it.slot,cat:it.slot,
+    d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,
+    twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',cost:it.cost||0};
+}
+function addToMarket(id){
+  const room=localStorage.getItem(ROOMKEY); if(!fbDb||!room){alert('Conecte-se à mesa primeiro.');return;}
+  const it=ITEM_BY_ID[id]; if(!it)return;
+  const oid='o_'+Math.random().toString(36).slice(2,9);
+  const base=fbDb.ref('mesas/'+room+'/mercado');
+  base.child('andar').once('value').then(s=>{ if(s.val()==null)base.update({andar:gmState.andar||1,geradoEm:Date.now()}); });
+  base.child('ofertas/'+oid).set(offerFromItem(it)).then(()=>{ toast(it.name+' adicionado ao mercado.'); });
+}
+function removeOffer(oid){
+  const room=localStorage.getItem(ROOMKEY); if(!fbDb||!room)return;
+  fbDb.ref('mesas/'+room+'/mercado/ofertas/'+oid).remove();
+}
+function updateOfferPrice(oid,val){
+  const room=localStorage.getItem(ROOMKEY); if(!fbDb||!room)return;
+  const c=Math.max(0,parseInt(val,10)||0);
+  fbDb.ref('mesas/'+room+'/mercado/ofertas/'+oid+'/cost').set(c);
+}
+function toast(msg){ const st=document.getElementById('bopcaStatus'); if(st){st.textContent='✓ '+msg;} }
+function renderMarketAdmin(){
+  const an=document.getElementById('mktAdmAndar'); if(an)an.textContent=MARKET.andar||gmState.andar||1;
+  const box=document.getElementById('mktOffers'); const cnt=document.getElementById('mktAdmCount');
+  if(!box)return;
+  const ofertas=MARKET.ofertas||{}; const ids=Object.keys(ofertas);
+  if(cnt)cnt.textContent=ids.length?(ids.length+' itens ofertados · Andar '+(MARKET.andar||1)):'Mercado vazio — gere uma oferta ou adicione itens abaixo.';
+  if(!ids.length){box.innerHTML='<div class="nobody">Nenhuma oferta no mercado. Use “Gerar oferta” ou adicione itens manualmente.</div>';return;}
+  ids.sort((a,b)=>{const ra=RARORDER.indexOf(ofertas[a].rar),rb=RARORDER.indexOf(ofertas[b].rar);return ra-rb||(ofertas[a].cost||0)-(ofertas[b].cost||0);});
+  box.innerHTML=ids.map(oid=>{
+    const o=ofertas[oid]; const cor=RAR[o.rar]||RAR.comum; const parts=[];
+    if(o.d1||o.d2||o.d3)parts.push(`<span class="dmg">${o.d1||0}/${o.d2||0}/${o.d3||0}</span>${o.attr?' ['+o.attr+']':''}`);
+    if(o.prec)parts.push('Prec +'+o.prec); if(o.def)parts.push(`<span class="def">Def +${o.def}</span>`); if(o.twoHand)parts.push('2 mãos');
+    return `<div class="brow" style="border-left-color:${cor}">
+      <div class="bn">${escapeHTML(o.name||'item')} <span style="font-size:10px;color:var(--dim)">· ${o.rar}</span></div>
+      <div class="bt">${escapeHTML(o.type||'')}</div>
+      ${parts.length?`<div class="bs">${parts.join(' · ')}</div>`:''}
+      ${o.fx?`<div class="bd">${escapeHTML(o.fx)}</div>`:''}
+      <div style="display:flex;align-items:center;gap:8px;margin-top:7px">
+        <span style="font-size:11px;color:var(--dim)">Preço</span>
+        <input type="number" min="0" value="${o.cost||0}" onchange="updateOfferPrice('${oid}',this.value)" style="width:80px;background:var(--panel2);border:1px solid var(--line);color:var(--accent2);border-radius:6px;padding:4px 6px;font-weight:700;text-align:center"> 🪙
+        <button class="sm" style="margin-left:auto;background:#3a1a1a;border-color:#5a2a2a;color:#ffb3b3" onclick="removeOffer('${oid}')">✕ Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function setMktRar(el,r){mktRar=r;document.querySelectorAll('#mktRarChips .chip').forEach(c=>c.classList.toggle('on',c===el));renderMktPicker();}
+function buildMktSlotOptions(){
+  const sel=document.getElementById('mktSlot'); if(!sel)return;
+  const slots=[...new Set(ITEM_CAT.map(i=>i.slot))];
+  sel.innerHTML='<option value="">Todos os tipos</option>'+slots.map(s=>`<option value="${s}">${SLOTLBL2[s]||s}</option>`).join('');
+}
+function renderMktPicker(){
+  const box=document.getElementById('mktPickList'); if(!box)return;
+  if(!ITEM_CAT.length){document.getElementById('mktPickCount').textContent='Catálogo de itens ainda não carregou.';box.innerHTML='';return;}
+  const q=norm((document.getElementById('mktSearch')||{}).value);
+  const slot=(document.getElementById('mktSlot')||{}).value||'';
+  const list=ITEM_CAT.filter(i=>(!mktRar||i.rar===mktRar)&&(!slot||i.slot===slot)&&(!q||norm(i.name).includes(q)||norm(i.fx).includes(q)||norm(i.type).includes(q)));
+  document.getElementById('mktPickCount').textContent=list.length+' itens (clique para ofertar pelo preço de tabela)';
+  box.innerHTML=list.map(i=>{
+    const cor=RAR[i.rar]||RAR.comum; const parts=[];
+    if(i.d1||i.d2||i.d3)parts.push(`<span class="dmg">${i.d1||0}/${i.d2||0}/${i.d3||0}</span>${i.attr?' ['+i.attr+']':''}`);
+    if(i.prec)parts.push('Prec +'+i.prec); if(i.def)parts.push(`<span class="def">Def +${i.def}</span>`); if(i.twoHand)parts.push('2 mãos');
+    return `<div class="brow" style="border-left-color:${cor};cursor:pointer" onclick="addToMarket('${i.id}')" title="Adicionar ao mercado">
+      <div class="bn">${escapeHTML(i.name)} <span style="float:right;color:var(--accent2);font-weight:800">+ ${i.cost||0} 🪙</span></div>
+      <div class="bt">${escapeHTML(i.type||'')} · ${i.rar}</div>
+      ${parts.length?`<div class="bs">${parts.join(' · ')}</div>`:''}
+      ${i.fx?`<div class="bd">${escapeHTML(i.fx)}</div>`:''}
+    </div>`;
+  }).join('')||'<div class="nobody">Nenhum item encontrado.</div>';
 }
 
 function cardStats(c){
@@ -494,7 +608,7 @@ function indexCats(){
 async function loadCats(){
   try{const r=await fetch(CAT_ITENS_URL,{cache:'no-store'});if(r.ok){const d=await r.json();ITEM_CAT=d.itens||d||[];}}catch(e){}
   try{const r=await fetch(CAT_SKILLS_URL,{cache:'no-store'});if(r.ok){const d=await r.json();SKILL_CAT=d.skills||d||[];}}catch(e){}
-  indexCats(); buildItemSlotOptions(); renderSkillBrowser(); renderItemBrowser();
+  indexCats(); buildItemSlotOptions(); buildMktSlotOptions(); renderSkillBrowser(); renderItemBrowser(); renderMktPicker();
 }
 
 /* ===================== Monstros (embutido — Bestiário Andar 1) ===================== */
