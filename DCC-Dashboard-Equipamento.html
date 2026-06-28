@@ -206,6 +206,8 @@
   .atk-dmg{font-size:10px;color:var(--dim);margin-top:3px}
   .atk-dmg b{font-size:13px;color:#ffcf9a}
   .atk-prec{color:var(--accent2);margin-left:6px}
+  .atk-mult{color:#ffcf9a;margin-left:6px;font-weight:700}
+  .atk-pm{display:inline-block;margin-left:6px;font-size:9px;font-weight:800;color:#cfe2ff;background:#1c2c46;border:1px solid #34507e;border-radius:8px;padding:1px 6px}
   .atk-foot{font-size:9.5px;color:var(--dim);margin-top:7px;line-height:1.35}
   /* companheiros */
   .compan-list{display:flex;flex-direction:column;gap:8px}
@@ -245,6 +247,18 @@
   .sendbox h3{margin:0 0 4px} .sendbox .subt{font-size:12px;color:var(--dim);margin-bottom:12px}
   .sendlist{display:flex;flex-direction:column;gap:7px;max-height:50vh;overflow:auto}
   .sendlist button{width:100%;text-align:left;padding:10px 12px;font-size:13px}
+  /* colapso do andar */
+  #collapseBar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#1a140a;border:1px solid #4a3a1a;border-radius:10px;padding:8px 14px;margin-bottom:12px}
+  #collapseBar.warn{background:#241606;border-color:#7a4a12}
+  #collapseBar.danger{background:#2a0f0f;border-color:#7a2020;animation:cbpulse 1.6s ease-in-out infinite}
+  @keyframes cbpulse{0%,100%{box-shadow:0 0 0 rgba(255,80,80,0)}50%{box-shadow:0 0 14px rgba(255,80,80,.35)}}
+  #collapseBar .cb-andar{font-size:12px;font-weight:800;color:#10131a;background:var(--accent2,#ffcf3f);padding:2px 9px;border-radius:20px}
+  #collapseBar .cb-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim)}
+  #collapseBar .cb-pips{display:inline-flex;gap:4px}
+  #collapseBar .cb-pip{width:16px;height:16px;border-radius:4px;border:1px solid #4a4030;background:#15110a}
+  #collapseBar .cb-pip.on{background:#ff7a2a;border-color:#ff7a2a}
+  #collapseBar .cb-pip.hot{background:#ff4d4d;border-color:#ff4d4d}
+  #collapseBar .cb-txt{font-size:12px;font-weight:700}
   /* abrir caixa + mercado */
   .box .bopen{margin-top:6px;width:100%;font-size:11px;padding:4px 6px;background:var(--bc);border:none;color:#10131a;font-weight:800;border-radius:7px;cursor:pointer}
   .box .bopen:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(1)}
@@ -313,6 +327,14 @@
   <div class="catbar" id="cfgbar" style="display:none">
     <textarea id="fbCfg" placeholder="Cole aqui o objeto firebaseConfig do seu projeto…" style="flex:1;min-width:240px;background:var(--panel2);border:1px solid var(--line);color:#fff;border-radius:7px;padding:8px;font-size:11px;font-family:monospace;min-height:96px"></textarea>
     <button class="sm" onclick="saveCfg()">Salvar config</button>
+  </div>
+
+  <!-- COLAPSO DO ANDAR (controlado pelo Mestre) -->
+  <div id="collapseBar" style="display:none">
+    <span class="cb-andar" id="cbAndar">Andar 1</span>
+    <span class="cb-lbl">⏳ Colapso do andar</span>
+    <span class="cb-pips" id="cbPips"></span>
+    <span class="cb-txt" id="cbTxt"></span>
   </div>
 
   <div class="grid">
@@ -727,7 +749,7 @@ function isDefaultSheet(){
   return !(state.name) && Object.keys(state.cards||{}).length===0 && (state.skills||[]).length===0 && (state.inventory||[]).length===0 && (state.gold||0)===0;
 }
 function applyCloud(data){
-  const base={name:'',level:1,attr:{FOR:1,DEX:1,CON:1,INT:1,CHA:1},cards:{},inventory:[],gold:0,boxes:{bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0},skills:[],psTotal:2,pmCur:0,hpCur:null,pa:0,xp:0,companions:[],apAvail:0,apCredited:null,achievements:{}};
+  const base={name:'',level:1,attr:{FOR:1,DEX:1,CON:1,INT:1,CHA:1},cards:{},inventory:[],gold:0,boxes:{bronze:0,prata:0,ouro:0,platina:0,lendaria:0,divina:0},skills:[],psTotal:2,pmCur:0,hpCur:null,pa:0,xp:0,companions:[],apAvail:0,apCredited:null,achievements:{},bopcaDisc:0};
   state=Object.assign(base,data||{});
   if(!state.attr)state.attr=base.attr;
   if(state.hpCur==null)state.hpCur=8+state.attr.CON*3;
@@ -753,8 +775,8 @@ function cloudSyncOnConnect(){ // ao conectar: a versão MAIS RECENTE vence (por
     const localT=state.updatedAt||0, cloudT=(data&&data.updatedAt)||0;
     if(data && (cloudT>localT || isDefaultSheet())){ applyCloud(data); } // nuvem mais nova (ou local vazia) → carrega
     else { pushCloud(); }                                               // local mais nova (ou sem nuvem) → publica
-    attachInbox(); attachMarket();
-  }).catch(()=>{try{pushCloud();}catch(e){}attachInbox();attachMarket();});
+    attachInbox(); attachMarket(); attachGm();
+  }).catch(()=>{try{pushCloud();}catch(e){}attachInbox();attachMarket();attachGm();});
 }
 function pullCloud(){ // botão "Puxar ficha" — recuperação manual
   if(!fbDb){alert('Conecte-se à mesa primeiro (📡 Conectar mesa).');return;}
@@ -770,7 +792,7 @@ function pushCloud(){
   if(!fbDb)return;
   const room=localStorage.getItem(ROOMKEY); if(!room)return;
   fbDb.ref('mesas/'+room+'/jogadores/'+playerId).set({
-    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,attrEff:{FOR:effAttr('FOR'),DEX:effAttr('DEX'),CON:effAttr('CON'),INT:effAttr('INT'),CHA:effAttr('CHA')},cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),hpCur:state.hpCur!=null?state.hpCur:hpMaxVal(),hpMax:hpMaxVal(),pa:state.pa||0,xp:state.xp||0,companions:state.companions||[],apAvail:apComputed(),achievements:state.achievements||{},updatedAt:state.updatedAt||Date.now()
+    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,attrEff:{FOR:effAttr('FOR'),DEX:effAttr('DEX'),CON:effAttr('CON'),INT:effAttr('INT'),CHA:effAttr('CHA')},cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),hpCur:state.hpCur!=null?state.hpCur:hpMaxVal(),hpMax:hpMaxVal(),pa:state.pa||0,xp:state.xp||0,companions:state.companions||[],apAvail:apComputed(),achievements:state.achievements||{},bopcaDisc:state.bopcaDisc||0,updatedAt:state.updatedAt||Date.now()
   });
 }
 function persistState(){state.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(state));pushCloud();}
@@ -865,13 +887,15 @@ function blockedHand(){
 }
 
 /* ---------- board ---------- */
-function cardStatsHTML(c){
+function cardStatsHTML(c,hideCost){
   const dmg=(c.d1||c.d2||c.d3)?`<div><span class="dmg">Dano ${c.d1||0} / ${c.d2||0} / ${c.d3||0}</span>${c.attr?' ['+c.attr+']':''}</div>`:'';
   const prec=c.prec?`<div>Precisão +${c.prec}</div>`:'';
   const def=c.def?`<div><span class="def">Defesa +${c.def}</span></div>`:'';
   const ub=(c.ubd||c.ubp)?`<div><span style="color:#ff9d5c;font-weight:700">Desarmado ${c.ubd?'+'+c.ubd+' faixa':''}${c.ubd&&c.ubp?' · ':''}${c.ubp?'+'+c.ubp+' Prec':''}</span></div>`:'';
   const ab=abHTML(c.ab);
-  return dmg+prec+def+ub+ab;
+  const cost=c.cost||((catalog.find(i=>i.id===c.srcId)||{}).cost)||0;
+  const val=(!hideCost&&cost)?`<div><span style="color:var(--accent2);font-weight:700">Valor: ${cost} 🪙</span></div>`:'';
+  return dmg+prec+def+ub+ab+val;
 }
 function abHTML(ab){
   if(!ab)return '';
@@ -921,10 +945,16 @@ function skillDamage(s){
   if(m) return {d:[+m[1],+m[2],+m[3]], attr:m[4]};
   return null;
 }
-function atkRow(name,tag,bands,prec,color){
+// soma da Precisão vinda de TODO equipamento (anéis, elmos, a própria arma…)
+function gearPrec(){let p=0;Object.values(state.cards).forEach(c=>p+=(+c.prec||0));return p;}
+// custo de PM do ataque básico: varinha = 1, cajado = 2 (ou campo pm do item, se houver)
+function weaponPM(c){ if(c.pm!=null)return +c.pm||0; const t=c.type||''; if(/Cajado/i.test(t))return 2; if(/Varinha/i.test(t))return 1; return 0; }
+function atkRow(name,tag,bands,prec,color,mult,pm){
+  const mtxt=(mult!=null)?`<span class="atk-mult">×${multStrOf(mult)}</span>`:'';
+  const pmtxt=pm?`<span class="atk-pm">🔷 ${pm} PM</span>`:'';
   return `<div class="atk" style="border-left-color:${color}">
-    <div class="atk-top"><span class="atk-name">${escapeHTML(name)}</span><span class="atk-tag">${escapeHTML(tag)}</span></div>
-    <div class="atk-dmg"><b>${bands[0]}</b> / <b>${bands[1]}</b> / <b>${bands[2]}</b><span class="atk-prec">Prec +${prec}</span></div>
+    <div class="atk-top"><span class="atk-name">${escapeHTML(name)}${pmtxt}</span><span class="atk-tag">${escapeHTML(tag)}</span></div>
+    <div class="atk-dmg"><b>${bands[0]}</b> / <b>${bands[1]}</b> / <b>${bands[2]}</b>${mtxt}<span class="atk-prec">Prec +${prec}</span></div>
   </div>`;
 }
 function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells/skills com dano)
@@ -933,14 +963,16 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
   // 1) Desarmado
   const FOR=effAttr('FOR'), DEX=effAttr('DEX'), reg=FOR>=DEX?'FOR':'DEX', regVal=Math.max(FOR,DEX);
   let ubd=0,ubp=0; Object.values(state.cards).forEach(c=>{ubd+=(+c.ubd||0);ubp+=(+c.ubp||0);});
+  const gp=gearPrec();
   const um=regVal/5, ub=[1,2,4].map(b=>Math.max(1,Math.floor((b+ubd)*um)));
-  rows.push(atkRow('Desarmado','['+reg+'] · punhos'+(ubd?' +'+ubd+'f gear':''), ub, isqrt(regVal)+ubp, '#ff9d5c'));
+  rows.push(atkRow('Desarmado','['+reg+'] · punhos'+(ubd?' +'+ubd+'f gear':''), ub, isqrt(regVal)+ubp+gp, '#ff9d5c', um));
   // 2) Armas equipadas (têm faixas e atributo regente)
   Object.values(state.cards).forEach(c=>{
     if((c.d1||c.d2||c.d3) && c.attr){
       const av=effAttr(c.attr), m=av/5;
       const b=[c.d1,c.d2,c.d3].map(x=>Math.max(1,Math.floor((+x||0)*m)));
-      rows.push(atkRow(c.name||'Arma','['+c.attr+'] · arma', b, isqrt(av)+(+c.prec||0), RAR[c.rar]?RAR[c.rar].cor:'var(--r-comum)'));
+      const pm=weaponPM(c);
+      rows.push(atkRow(c.name||'Arma','['+c.attr+'] · arma', b, isqrt(av)+gp, RAR[c.rar]?RAR[c.rar].cor:'var(--r-comum)', m, pm));
     }
   });
   // 3) Spells/skills de dano (faixas estruturadas d1/d2/d3 + attr)
@@ -949,14 +981,14 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
     const av=effAttr(dm.attr), m=av/5;
     const b=dm.d.map(x=>Math.max(1,Math.floor((+x||0)*m)));
     const cost=s.passiva?'passiva':([(+s.pm>0?'PM'+s.pm:''),(+s.cd>0?'CD'+s.cd:'')].filter(Boolean).join('·')||'livre');
-    rows.push(atkRow(s.name,'['+dm.attr+'] · '+cost, b, isqrt(av), TR[s.track]||TR.NEU));
+    rows.push(atkRow(s.name,'['+dm.attr+'] · '+cost, b, isqrt(av)+gp, TR[s.track]||TR.NEU, m));
   });
   el.innerHTML=`
     <div class="uhead"><span class="utitle">⚔ Ataques</span>
-      <span class="ureg">dano final (faixa × atrib÷5)</span></div>
+      <span class="ureg">dano = faixa × ⌊atrib÷5⌋ · Prec = ⌊√atrib⌋ + equip</span></div>
     <div class="atk-list">${rows.join('')}</div>
-    <div class="atk-foot">Baixa / Média / Alta já calculadas. Crítico = faixa Alta × 2. Improvisada: 1/3/6 [FOR].
-    Spells sem número aqui (faixa "Média/Alta") aparecem só na lista de Skills.</div>`;
+    <div class="atk-foot">Dano (Baixa/Média/Alta) e Precisão já incluem os modificadores de equipamento${gp?(' (Prec +'+gp+' de equip)'):''}. Crítico = faixa Alta × 2.
+    🔷 Varinhas custam 1 PM e cajados 2 PM por ataque básico. Improvisada: 1/3/6 [FOR].</div>`;
 }
 function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();renderHp();renderCompanions();renderAp();renderAch();updateAttrSqrt();}
 
@@ -967,7 +999,68 @@ function setSkTrackF(el,t){skTrackF=t||'';document.querySelectorAll('.toolbar .f
 /* ---------- conquistas ---------- */
 function setAchSearch(v){achSearch=(v||'').toLowerCase();renderAch();}
 function setAchAndar(v){achAndar=v||'';renderAch();}
-function toggleAch(id){ state.achievements=state.achievements||{}; if(state.achievements[id])delete state.achievements[id]; else state.achievements[id]=true; persistState(); renderAch(); }
+/* ---------- conquistas: efeitos aplicados automaticamente ---------- */
+const ACH_TIER={'bronze':'bronze','prata':'prata','ouro':'ouro','platina':'platina','lendária':'lendaria','lendaria':'lendaria','divina':'divina'};
+function sponsorTier(pa){ pa=pa||0; if(pa>=250)return 'divina'; if(pa>=160)return 'lendaria'; if(pa>=100)return 'platina'; if(pa>=60)return 'ouro'; if(pa>=30)return 'prata'; return 'bronze'; }
+function findCatalogByName(txt){
+  let c=(txt||'').replace(/^\+?\d+\s*/,'').replace(/\bgarantid[oa]\b/i,'').trim();
+  if(c.length<3)return null;
+  const n=c.toLowerCase();
+  return catalog.find(i=>(i.name||'').toLowerCase().includes(n)) || catalog.find(i=>n.includes((i.name||'').toLowerCase()));
+}
+// interpreta a string de recompensa e devolve um "snapshot" do que será concedido
+function parseAchRewards(rec){
+  const s={xp:0,pa:0,gold:0,boxes:{},disc:0,items:[],notes:[]};
+  (rec||'').split('·').map(p=>p.trim()).forEach(p=>{ if(!p)return; let m;
+    if(m=p.match(/([+-]?\d+)\s*XP/i)){ s.xp+=parseInt(m[1],10); return; }
+    if(m=p.match(/([+-]?\d+)\s*PA/i)){ s.pa+=parseInt(m[1],10); return; }
+    if(m=p.match(/(\d+)\s*d\s*(\d+)\s*(?:de\s*)?ouro/i)){ let g=0,n=+m[1],f=+m[2]; for(let i=0;i<n;i++)g+=Math.floor(Math.random()*f)+1; s.gold+=g; s.notes.push(m[1]+'d'+m[2]+' = '+g+' ouro'); return; }
+    if(m=p.match(/(\d+)\s*(?:de\s*)?ouro/i)){ s.gold+=+m[1]; return; }
+    if(/Caixa\s+de\s+Patroc/i.test(p)){ const t=sponsorTier(state.pa||0); s.boxes[t]=(s.boxes[t]||0)+1; s.notes.push('Caixa de Patrocínio → '+t+' (abra com ✓ Patrocínio)'); return; }
+    if(m=p.match(/Caixa\s+(Bronze|Prata|Ouro|Platina|Lend[áa]ria|Divina)/i)){ const t=ACH_TIER[m[1].toLowerCase()]; if(t)s.boxes[t]=(s.boxes[t]||0)+1; return; }
+    if(m=p.match(/(\d+)\s*%[^]*Bopca/i)){ s.disc+=(+m[1])/100; return; }
+    if(/item Raro garantido/i.test(p)){ const pool=catalog.filter(i=>i.rar==='raro'); if(pool.length){const it=pool[Math.floor(Math.random()*pool.length)]; s.items.push({srcId:it.id,name:it.name}); } else s.notes.push('1 item Raro (catálogo não carregado)'); return; }
+    const named=findCatalogByName(p);
+    if(named){ s.items.push({srcId:named.id,name:named.name}); return; }
+    s.notes.push(p); // não reconhecido → nota manual
+  });
+  return s;
+}
+function applyAchSnapshot(s,sign){
+  sign=sign||1;
+  state.xp=Math.max(0,(state.xp||0)+sign*s.xp);
+  state.pa=Math.max(0,(state.pa||0)+sign*s.pa);
+  state.gold=Math.max(0,(state.gold||0)+sign*s.gold);
+  for(const t in s.boxes) state.boxes[t]=Math.max(0,(state.boxes[t]||0)+sign*s.boxes[t]);
+  state.bopcaDisc=Math.min(0.9,Math.max(0,(state.bopcaDisc||0)+sign*s.disc));
+  if(sign>0){ s.items.forEach(it=>{const c=catalog.find(i=>i.id===it.srcId); if(c)addInvItem(cardFromCatalog(c),c.slot,1);}); }
+  else { s.items.forEach(it=>{ const idx=state.inventory.findIndex(x=>x.srcId===it.srcId||x.name===it.name); if(idx>=0){ if((state.inventory[idx].qty||1)>1)state.inventory[idx].qty--; else state.inventory.splice(idx,1);} }); }
+}
+function achSummary(s){
+  const p=[]; if(s.xp)p.push((s.xp>0?'+':'')+s.xp+' XP'); if(s.gold)p.push('+'+s.gold+' ouro'); if(s.pa)p.push((s.pa>0?'+':'')+s.pa+' PA');
+  for(const t in s.boxes)p.push('+'+s.boxes[t]+' Caixa '+t); if(s.disc)p.push('+'+Math.round(s.disc*100)+'% desconto Bopca');
+  s.items.forEach(it=>p.push('+ '+it.name)); s.notes.forEach(n=>p.push(n));
+  return p.join(' · ')||'sem efeitos automáticos';
+}
+function syncResourceInputs(){
+  ['gold','pa','xp'].forEach(k=>{const el=document.getElementById(k); if(el)el.value=state[k]||0;});
+}
+function toggleAch(id){
+  state.achievements=state.achievements||{};
+  const a=CONQUISTAS.find(x=>x.id===id); if(!a)return;
+  const cur=state.achievements[id];
+  if(cur){ // desmarcar → reverter efeitos
+    if(cur===true){ if(!confirm('"'+a.nome+'" foi marcada antes da automação (efeitos não registrados). Desmarcar mesmo assim?'))return; }
+    else { if(!confirm('Desfazer "'+a.nome+'" e REVERTER os efeitos aplicados ('+achSummary(cur)+')?'))return; applyAchSnapshot(cur,-1); }
+    delete state.achievements[id]; persistState(); syncResourceInputs(); render(); toast('Conquista desmarcada: '+a.nome);
+    return;
+  }
+  const snap=parseAchRewards(a.rec);   // concede
+  applyAchSnapshot(snap,1);
+  state.achievements[id]=snap;
+  persistState(); syncResourceInputs(); render();
+  toast('🏆 '+a.nome+' — '+achSummary(snap));
+}
 function renderAch(){
   const list=document.getElementById('achList'); if(!list)return;
   const done=state.achievements||{};
@@ -976,12 +1069,13 @@ function renderAch(){
   const shown=CONQUISTAS.filter(a=>(!achAndar||String(a.andar)===achAndar)&&(!achSearch||a.nome.toLowerCase().includes(achSearch)||a.cond.toLowerCase().includes(achSearch)));
   if(!shown.length){list.innerHTML='<div class="skill-empty">Nenhuma conquista bate com o filtro/busca.</div>';return;}
   list.innerHTML=shown.map(a=>{
-    const d=!!done[a.id];
-    return `<div class="ach ${d?'done':''}" onclick='toggleAch(${JSON.stringify(a.id)})' title="Clique para marcar/desmarcar">
+    const e=done[a.id]; const d=!!e;
+    const applied=(d&&e!==true)?`<div class="ar" style="color:#8be08b">✓ aplicado: ${escapeHTML(achSummary(e))}</div>`:'';
+    return `<div class="ach ${d?'done':''}" onclick='toggleAch(${JSON.stringify(a.id)})' title="${d?'Clique para desmarcar e reverter os efeitos':'Clique para concluir — os efeitos são aplicados automaticamente'}">
       <div class="an"><span>${escapeHTML(a.nome)}</span><span class="achk">${d?'✅':'⬜'}</span></div>
       <div class="aand">Andar ${a.andar}</div>
       <div class="ac">${escapeHTML(a.cond)}</div>
-      <div class="ar">🎁 ${escapeHTML(a.rec)}</div>
+      <div class="ar">🎁 ${escapeHTML(a.rec)}</div>${applied}
     </div>`;
   }).join('');
 }
@@ -1012,7 +1106,7 @@ function openSendItem(u){
 function doSendItem(targetPid){
   const u=_sendUid; const it=state.inventory.find(x=>x.uid===u); if(!it){closeSend();return;}
   const room=localStorage.getItem(ROOMKEY); if(!room||!fbDb){closeSend();return;}
-  const card={name:it.name||'',type:it.type||'',rar:it.rar||'comum',d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',ab:it.ab||null,srcId:it.srcId||'',cat:it.cat||'consumivel',qty:1};
+  const card={name:it.name||'',type:it.type||'',rar:it.rar||'comum',d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',ab:it.ab||null,cost:+it.cost||0,srcId:it.srcId||'',cat:it.cat||'consumivel',qty:1};
   fbDb.ref('mesas/'+room+'/inbox/'+targetPid).push({item:card,from:state.name||'(sem nome)',ts:Date.now()})
     .then(()=>{
       if((it.qty||1)>1)it.qty=it.qty-1; else state.inventory=state.inventory.filter(x=>x.uid!==u);
@@ -1034,7 +1128,7 @@ function attachInbox(){
 /* ---------- helpers de carta ---------- */
 function uid(){return 'i_'+Math.random().toString(36).slice(2,9);}
 function cardFromCatalog(i){return {name:i.name,type:i.type,rar:i.rar,d1:i.d1||0,d2:i.d2||0,d3:i.d3||0,
-  attr:i.attr||'',prec:i.prec||0,def:i.def||0,twoHand:!!i.twoHand,ubd:+i.ubd||0,ubp:+i.ubp||0,fx:i.fx||'',ab:i.ab||null,srcId:i.id||''};}
+  attr:i.attr||'',prec:i.prec||0,def:i.def||0,twoHand:!!i.twoHand,ubd:+i.ubd||0,ubp:+i.ubp||0,fx:i.fx||'',ab:i.ab||null,cost:+i.cost||0,srcId:i.id||''};}
 function catOf(slotId){const s=SLOTS.find(x=>x.id===slotId);return s?s.cat:'';}
 function addInvItem(card,cat,qty){
   qty=qty||1;
@@ -1421,6 +1515,29 @@ function attachMarket(){
     if(document.getElementById('marketModal').classList.contains('show'))renderMarket();
   });
 }
+/* ---------- Colapso do andar (lido do Mestre) ---------- */
+const COL_PIPS=6;
+let _gmAttached=false;
+function attachGm(){
+  if(!fbDb)return; const room=localStorage.getItem(ROOMKEY); if(!room)return;
+  if(_gmAttached)return; _gmAttached=true;
+  fbDb.ref('mesas/'+room+'/mestre').on('value',snap=>renderCollapse(snap.val()||{}));
+}
+function renderCollapse(gm){
+  const bar=document.getElementById('collapseBar'); if(!bar)return;
+  const andar=gm.andar||1, col=Math.max(0,Math.min(COL_PIPS,gm.colapso||0));
+  bar.style.display='flex';
+  document.getElementById('cbAndar').textContent='Andar '+andar;
+  let pips='';for(let i=1;i<=COL_PIPS;i++){const on=col>=i;const hot=on&&i>COL_PIPS-2;pips+=`<span class="cb-pip ${on?(hot?'hot':'on'):''}"></span>`;}
+  document.getElementById('cbPips').innerHTML=pips;
+  const left=COL_PIPS-col;
+  const txt=document.getElementById('cbTxt');
+  bar.classList.toggle('warn',col>=2&&col<COL_PIPS-1);
+  bar.classList.toggle('danger',col>=COL_PIPS-1);
+  if(col<=0){txt.textContent='estável';txt.style.color='#8be08b';}
+  else if(col>=COL_PIPS){txt.textContent='⚠ ANDAR EM COLAPSO — corram!';txt.style.color='#ff6b6b';}
+  else{txt.textContent=left+' até o colapso';txt.style.color=(col>=COL_PIPS-1?'#ff8a8a':(col>=2?'#ffb366':'#cfd6e0'));}
+}
 function updateMarketBadge(){
   const n=Object.keys(_market.ofertas||{}).length;
   const b=document.getElementById('mktBadge');
@@ -1433,9 +1550,11 @@ function openMarket(){
   renderMarket();
 }
 function closeMarket(){document.getElementById('marketModal').classList.remove('show');}
+function bopcaPrice(cost){ return Math.max(0,Math.round((cost||0)*(1-(state.bopcaDisc||0)))); }
 function renderMarket(){
   document.getElementById('marketGold').textContent=state.gold||0;
-  document.getElementById('marketSub').textContent='Mercado do Andar '+(_market.andar||1)+' — comprar desconta o seu ouro na hora. As ofertas são compartilhadas (quem comprar primeiro leva).';
+  const disc=state.bopcaDisc||0;
+  document.getElementById('marketSub').innerHTML='Mercado do Andar '+(_market.andar||1)+' — comprar desconta o seu ouro na hora.'+(disc?` <b style="color:#8be08b">Seu desconto de freguês: −${Math.round(disc*100)}%</b>`:'');
   const list=document.getElementById('marketList');
   const ofertas=_market.ofertas||{};
   const ids=Object.keys(ofertas);
@@ -1443,13 +1562,14 @@ function renderMarket(){
   // ordena por raridade depois preço
   ids.sort((a,b)=>{const ra=RARORDER.indexOf(ofertas[a].rar),rb=RARORDER.indexOf(ofertas[b].rar);return ra-rb||(ofertas[a].cost||0)-(ofertas[b].cost||0);});
   list.innerHTML=ids.map(id=>{
-    const o=ofertas[id]; const r=RAR[o.rar]||RAR.comum; const can=(state.gold||0)>=(o.cost||0);
+    const o=ofertas[id]; const r=RAR[o.rar]||RAR.comum; const pay=bopcaPrice(o.cost); const can=(state.gold||0)>=pay;
     const fx=o.fx?`<div class="mfx">${escapeHTML(o.fx)}</div>`:'';
+    const priceHTML=disc?`<div class="price"><span style="text-decoration:line-through;color:var(--dim);font-size:11px">${o.cost||0}</span> ${pay} 🪙</div>`:`<div class="price">${pay} 🪙</div>`;
     return `<div class="mkt-item" style="border-left-color:${r.cor}">
       <div class="mi"><div class="mn">${escapeHTML(o.name||'item')} <span class="lchip" style="background:${r.cor};font-size:9px">${r.nome}</span></div>
         <div class="mt">${escapeHTML(o.type||'')} · ${SLOTCATNAME[o.cat]||o.cat||''}</div>
-        <div class="msd">${cardStatsHTML(o)}</div>${fx}</div>
-      <div style="text-align:right"><div class="price">${o.cost||0} 🪙</div>
+        <div class="msd">${cardStatsHTML(o,true)}</div>${fx}</div>
+      <div style="text-align:right">${priceHTML}
         <button class="sm primary buy" ${can?'':'disabled'} onclick='buyMarket(${JSON.stringify(id)})'>${can?'Comprar':'Sem ouro'}</button></div>
     </div>`;
   }).join('');
@@ -1457,18 +1577,19 @@ function renderMarket(){
 function buyMarket(id){
   const room=localStorage.getItem(ROOMKEY); if(!room||!fbDb){alert('Conecte-se à mesa.');return;}
   const o=(_market.ofertas||{})[id]; if(!o){toast('Essa oferta já foi vendida.');renderMarket();return;}
-  if((state.gold||0)<(o.cost||0)){toast('Ouro insuficiente.');return;}
+  const pay=bopcaPrice(o.cost);
+  if((state.gold||0)<pay){toast('Ouro insuficiente.');return;}
   const ref=fbDb.ref('mesas/'+room+'/mercado/ofertas/'+id);
   // transação: só leva quem chegar primeiro
   ref.transaction(cur=>{ if(cur===null)return; return null; /* remove a oferta */ }, (err,committed)=>{
     if(err){alert('Falha na compra: '+err.message);return;}
     if(!committed){toast('Essa oferta já foi vendida por outro jogador.');renderMarket();return;}
     // committed: conseguimos remover -> a oferta era nossa
-    state.gold=(state.gold||0)-(o.cost||0);
-    const card={name:o.name,type:o.type,rar:o.rar,d1:o.d1||0,d2:o.d2||0,d3:o.d3||0,attr:o.attr||'',prec:o.prec||0,def:o.def||0,twoHand:!!o.twoHand,ubd:+o.ubd||0,ubp:+o.ubp||0,fx:o.fx||'',ab:o.ab||null,srcId:o.srcId||''};
+    state.gold=(state.gold||0)-pay;
+    const card={name:o.name,type:o.type,rar:o.rar,d1:o.d1||0,d2:o.d2||0,d3:o.d3||0,attr:o.attr||'',prec:o.prec||0,def:o.def||0,twoHand:!!o.twoHand,ubd:+o.ubd||0,ubp:+o.ubp||0,fx:o.fx||'',ab:o.ab||null,cost:+o.cost||0,srcId:o.srcId||''};
     addInvItem(card,o.cat||o.slot||'consumivel',1);
-    persistState();render();
-    toast('🛒 Comprou: '+(o.name||'item')+' por '+(o.cost||0)+' ouro.');
+    persistState();render();syncResourceInputs();
+    toast('🛒 Comprou: '+(o.name||'item')+' por '+pay+' ouro.');
     renderMarket();
   });
 }
