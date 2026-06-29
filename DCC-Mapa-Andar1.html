@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCC · Mapa do Mestre — Andar 1: O Covil sob os Escombros</title>
+<style>
+  :root{
+    --bg:#0d1014; --panel:#161b24; --panel2:#1d2430; --line:#2a3340;
+    --ink:#e8edf4; --dim:#8b97a7; --gold:#ffcf3f;
+    --explored:#5d6b78; --atual:#ffcf3f; --frente:#2f8fff; --boss:#ff5d5d; --descida:#4caf50;
+    --r-comum:#9aa0a6; --r-raro:#2f8fff; --r-prata:#c4cdd6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 700px at 30% 0%, #141a23 0%, var(--bg) 70%);color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}
+  header{padding:16px 22px;border-bottom:1px solid var(--line);background:rgba(13,16,20,.7);position:sticky;top:0;z-index:5;backdrop-filter:blur(6px)}
+  header h1{margin:0;font-size:19px;letter-spacing:.3px}
+  header h1 .a{color:var(--gold)}
+  header small{color:var(--dim);font-size:12px}
+  .beats{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;font-size:11px}
+  .beat{padding:3px 9px;border:1px solid var(--line);border-radius:20px;color:var(--dim);white-space:nowrap}
+  .beat.done{color:var(--explored);border-color:#39434f}
+  .beat.now{color:#10131a;background:var(--gold);border-color:var(--gold);font-weight:800}
+  .beat.todo{color:#b9c6d6;border-color:#33405a}
+  .beat.boss{color:#ffb3b3;border-color:#5a2a2a}
+  .wrap{display:grid;grid-template-columns:1.55fr 1fr;gap:0;min-height:calc(100vh - 92px)}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .mapside{padding:16px;border-right:1px solid var(--line)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--dim);margin-bottom:10px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+  svg{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:14px;background:#0a0d11}
+  .room{cursor:pointer}
+  .room .blob{transition:.15s}
+  .room:hover .blob{filter:brightness(1.25)}
+  .room.sel .blob{stroke-width:4}
+  .room .lbl{font:700 13px system-ui;fill:var(--ink);pointer-events:none}
+  .room .ico{font-size:22px;pointer-events:none}
+  .room .sub{font:600 9.5px system-ui;fill:var(--dim);pointer-events:none;text-transform:uppercase;letter-spacing:.5px}
+  .corr{stroke:#33414f;stroke-width:11;fill:none;stroke-linecap:round;stroke-dasharray:2 13}
+  .pulse{animation:pp 1.6s ease-in-out infinite}
+  @keyframes pp{0%,100%{opacity:.35}50%{opacity:1}}
+  /* painel de detalhe */
+  .detail{padding:18px 20px;overflow:auto;max-height:calc(100vh - 92px)}
+  .detail .empty{color:var(--dim);font-size:14px;margin-top:30px;text-align:center}
+  .badge{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:3px 9px;border-radius:20px;margin-bottom:8px}
+  .d-title{font-size:21px;font-weight:800;margin:2px 0 2px}
+  .d-sub{color:var(--dim);font-size:12.5px;margin-bottom:14px}
+  .sec{margin:14px 0}
+  .sec h4{margin:0 0 7px;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--gold)}
+  .read{background:#11161e;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 13px;font-size:13.5px;font-style:italic;color:#dfe6ef}
+  .sys{background:#15110a;border-left:3px solid #c98a2a;border-radius:0 8px 8px 0;padding:9px 13px;font-size:12.5px;color:#f0d6a8;font-style:italic;margin-top:8px}
+  .enemy{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--boss);border-radius:9px;padding:9px 11px;margin-top:7px}
+  .enemy .en{font-weight:800;font-size:13px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .enemy .est{font-size:11.5px;color:#cdd6e1;margin-top:3px}
+  .enemy .esp{font-size:11.5px;color:#a9b4c2;margin-top:4px;line-height:1.4}
+  .enemy .tagp{font-size:9px;font-weight:800;background:var(--boss);color:#1a0a0a;padding:2px 6px;border-radius:7px;height:fit-content}
+  .key{background:#101a14;border:1px solid #214b32;border-radius:9px;padding:10px 12px;font-size:12.5px;color:#cdebd6;margin-top:7px}
+  .key b{color:#8be0a0}
+  .fala{font-size:12.5px;color:#d7c6ef;border-left:2px solid #6f4caf;padding:3px 0 3px 10px;margin-top:6px;font-style:italic}
+  .loot{background:#1a160a;border:1px solid #4a3f1a;border-radius:9px;padding:10px 12px;font-size:12.5px;color:#f3e6bf;margin-top:7px}
+  ul.tips{margin:6px 0 0;padding-left:18px;font-size:12.5px;color:#c5cdd8}
+  ul.tips li{margin:3px 0}
+  .hint{font-size:11px;color:var(--dim);margin-top:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗺 <span class="a">Mapa do Mestre</span> — Andar 1: O Covil sob os Escombros</h1>
+  <small>Sessão de hoje · o grupo está na <b style="color:var(--gold)">Sala Segura (McDonald's)</b>. Faltam: Linha de Frente · Hobgoblin · Groznak · Descida. Clique numa sala para ver as notas.</small>
+  <div class="beats">
+    <span class="beat done">✓ Entrada</span>
+    <span class="beat done">✓ Corredor das Armadilhas</span>
+    <span class="beat now">▶ McDonald's (Sala Segura)</span>
+    <span class="beat todo">Linha de Frente Goblin</span>
+    <span class="beat todo">Portão do Carrasco</span>
+    <span class="beat boss">Trono de Groznak</span>
+    <span class="beat todo">↓ Descida Andar 2</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="mapside">
+    <div class="legend">
+      <span><i class="dot" style="background:var(--explored)"></i> Explorado</span>
+      <span><i class="dot" style="background:var(--atual)"></i> Posição atual</span>
+      <span><i class="dot" style="background:var(--frente)"></i> À frente</span>
+      <span><i class="dot" style="background:var(--boss)"></i> Chefe</span>
+      <span><i class="dot" style="background:var(--descida)"></i> Descida</span>
+    </div>
+    <svg viewBox="0 0 1040 740" xmlns="http://www.w3.org/2000/svg">
+      <!-- corredores -->
+      <path class="corr" d="M205 200 C 215 250, 195 270, 200 320"/>
+      <path class="corr" d="M205 430 C 300 455, 340 450, 392 452"/>
+      <path class="corr" d="M548 452 C 600 450, 620 435, 648 420"/>
+      <path class="corr" d="M756 420 C 800 470, 815 500, 832 540"/>
+      <path class="corr" d="M905 605 C 945 630, 955 645, 965 660"/>
+      <!-- 3 pórticos / passagens (marcadores) -->
+      <g opacity=".8">
+        <rect x="263" y="392" width="9" height="22" rx="2" fill="#3a4654"/>
+        <rect x="276" y="392" width="9" height="22" rx="2" fill="#3a4654"/>
+        <rect x="289" y="392" width="9" height="22" rx="2" fill="#3a4654"/>
+        <text x="281" y="386" text-anchor="middle" style="font:600 8.5px system-ui;fill:#6c7b8c">3 passagens</text>
+      </g>
+
+      <!-- SALA 1: Entrada -->
+      <g class="room" data-room="entrada" onclick="sel('entrada')">
+        <path class="blob" d="M120 70 C 200 50, 290 70, 295 130 C 305 185, 240 215, 170 205 C 105 198, 85 140, 100 105 C 106 90, 110 76, 120 70 Z"
+          fill="#1b2129" stroke="var(--explored)" stroke-width="2.5"/>
+        <text class="ico" x="150" y="118" text-anchor="middle">🪨</text>
+        <text class="lbl" x="205" y="120" text-anchor="middle" style="fill:#aeb9c6">Caverna de Entrada</text>
+        <text class="sub" x="205" y="160" text-anchor="middle">Escadaria · 3 pórticos · ratos</text>
+      </g>
+
+      <!-- SALA 2: Corredor das Armadilhas -->
+      <g class="room" data-room="armadilhas" onclick="sel('armadilhas')">
+        <path class="blob" d="M150 300 C 230 285, 255 300, 250 335 C 246 372, 195 382, 150 372 C 110 364, 105 320, 130 306 C 138 302, 144 301, 150 300 Z"
+          fill="#1b2129" stroke="var(--explored)" stroke-width="2.5"/>
+        <text class="ico" x="150" y="338" text-anchor="middle">⚠️</text>
+        <text class="lbl" x="195" y="332" text-anchor="middle" style="fill:#aeb9c6">Corredor das Armadilhas</text>
+        <text class="sub" x="190" y="365" text-anchor="middle">Carga goblin · teto rachado</text>
+      </g>
+
+      <!-- SALA 3: McDonald's / Sala Segura -->
+      <g class="room sel" data-room="saferoom" onclick="sel('saferoom')">
+        <path class="blob pulse" d="M120 388 C 210 368, 300 388, 300 452 C 300 516, 210 536, 140 522 C 78 510, 70 432, 95 408 C 103 398, 110 392, 120 388 Z"
+          fill="#2a2410" stroke="var(--atual)" stroke-width="3.5"/>
+        <text class="ico" x="150" y="450" text-anchor="middle">🍟</text>
+        <text class="lbl" x="200" y="448" text-anchor="middle" style="fill:var(--gold)">McDonald's · SALA SEGURA</text>
+        <text class="sub" x="200" y="486" text-anchor="middle">Bopca · Guia · descanso · loja</text>
+        <text x="200" y="412" text-anchor="middle" style="font:800 9px system-ui;fill:#10131a;">VOCÊS ESTÃO AQUI</text>
+      </g>
+
+      <!-- SALA 4: Linha de Frente -->
+      <g class="room" data-room="frente" onclick="sel('frente')">
+        <path class="blob" d="M398 398 C 480 380, 555 398, 552 452 C 549 510, 470 520, 420 508 C 372 498, 360 432, 384 410 C 389 404, 393 400, 398 398 Z"
+          fill="#172230" stroke="var(--frente)" stroke-width="2.5"/>
+        <text class="ico" x="430" y="450" text-anchor="middle">🛡️</text>
+        <text class="lbl" x="478" y="446" text-anchor="middle" style="fill:#bcd2ee">Linha de Frente</text>
+        <text class="sub" x="475" y="484" text-anchor="middle">2 Lanceiros + Xamã</text>
+      </g>
+
+      <!-- SALA 5: Portão do Carrasco -->
+      <g class="room" data-room="carrasco" onclick="sel('carrasco')">
+        <path class="blob" d="M652 350 C 730 332, 800 352, 798 404 C 795 460, 720 470, 672 458 C 626 448, 614 384, 638 362 C 643 356, 647 352, 652 350 Z"
+          fill="#172230" stroke="var(--frente)" stroke-width="2.5"/>
+        <text class="ico" x="685" y="402" text-anchor="middle">🪓</text>
+        <text class="lbl" x="725" y="398" text-anchor="middle" style="fill:#bcd2ee">Portão do Carrasco</text>
+        <text class="sub" x="722" y="436" text-anchor="middle">Hobgoblin (gate de elite)</text>
+      </g>
+
+      <!-- SALA 6: Trono de Groznak (boss) -->
+      <g class="room" data-room="groznak" onclick="sel('groznak')">
+        <path class="blob" d="M770 500 C 870 472, 970 500, 968 575 C 966 650, 880 672, 805 656 C 735 642, 720 545, 748 516 C 755 508, 762 503, 770 500 Z"
+          fill="#2a1417" stroke="var(--boss)" stroke-width="3"/>
+        <text class="ico" x="815" y="565" text-anchor="middle">👑</text>
+        <text class="lbl" x="865" y="560" text-anchor="middle" style="fill:#ffc4c4">Trono de Groznak</text>
+        <text class="sub" x="860" y="598" text-anchor="middle">CHEFE · catedral-caverna</text>
+      </g>
+
+      <!-- SALA 7: Descida -->
+      <g class="room" data-room="descida" onclick="sel('descida')">
+        <path class="blob" d="M930 615 C 985 605, 1015 625, 1010 665 C 1005 702, 960 708, 935 698 C 912 690, 910 640, 922 625 C 925 620, 927 617, 930 615 Z"
+          fill="#13241a" stroke="var(--descida)" stroke-width="2.5"/>
+        <text class="ico" x="965" y="665" text-anchor="middle">⬇️</text>
+        <text class="sub" x="965" y="690" text-anchor="middle" style="fill:#9ed8ad">Andar 2</text>
+      </g>
+    </svg>
+    <div class="hint">Linearidade mascarada: descreva sempre 2–3 saídas, mas o próximo beat <i>está</i> atrás da porta que abrirem. O conteúdo é móvel; o rótulo, não.</div>
+  </div>
+
+  <div class="detail" id="detail">
+    <div class="empty">👈 Clique numa sala do mapa para ver as notas do Mestre.<br><br>O grupo está no <b style="color:var(--gold)">McDonald's (Sala Segura)</b> — comece por aí ou já abra a <b>Linha de Frente</b>.</div>
+  </div>
+</div>
+
+<script>
+const C={explored:'var(--explored)',atual:'var(--atual)',frente:'var(--frente)',boss:'var(--boss)',descida:'var(--descida)'};
+function enemy(name,tag,stats,esp){
+  return `<div class="enemy"><div class="en"><span>${name}</span>${tag?`<span class="tagp">${tag}</span>`:''}</div>
+    <div class="est">${stats}</div>${esp?`<div class="esp">${esp}</div>`:''}</div>`;
+}
+const ROOMS={
+  entrada:{status:'explored',badge:'EXPLORADO · Cena 0',title:'Caverna de Entrada',
+    sub:'A descida da escadaria, a área aberta e os 3 pórticos de pedra. Combate-tutorial dos ratos.',
+    read:'Onde havia uma cidade, agora há uma cratera — e no centro, uma escadaria de pedra que mergulha na Terra. Vocês descem juntos e desembocam numa caverna de teto perdido na escuridão, com três pórticos de pedra à frente.',
+    body:`<div class="sec"><h4>O que rolou aqui</h4><ul class="tips">
+      <li>Desceram a escadaria e pegaram armas improvisadas (cano de ferro / fêmur — 1/3/6).</li>
+      <li>Combate-tutorial: 3 Ratos Carniçais Mutantes. Ensinou a rolagem única e o desarmado.</li>
+      <li>Os <b>3 pórticos de pedra</b> são ilusão de escolha — todos levavam ao corredor.</li></ul></div>
+      <div class="sec"><h4>Status</h4><div class="key">Sala limpa. Use para relembrar o tom do Sistema/Apresentador antes de retomar.</div></div>`},
+
+  armadilhas:{status:'explored',badge:'EXPLORADO · Cena 2 (Rota B)',title:'Corredor das Armadilhas',
+    sub:'A galeria desabada que eles atravessaram a caminho da Sala Segura.',
+    read:'Uma galeria larga, silenciosa, suspeitosamente vazia. Estalactites pesadas pendem de um teto rachado. Meio enterrada no cascalho, uma pilha de frascos toscos — e um fio de tripa esticado, quase invisível.',
+    body:`<div class="sec"><h4>O que rolou aqui</h4><ul class="tips">
+      <li>Armadilha "Carga Goblin Esquecida": fio de tripa (teste DEX/INT vs 10).</li>
+      <li>Disparar = dano explosivo (faixa Média, Prec +4) a todos a 2 m + teto cede (terreno difícil).</li>
+      <li>Desarmar com sucesso rendia 1 Granada de Estilhaços entre os frascos.</li></ul></div>
+      <div class="sec"><h4>Status</h4><div class="key">Atravessado. Se o grupo quiser voltar e fuçar, dê migalhas — depois o <b>relógio de colapso</b> puxa de volta.</div></div>`},
+
+  saferoom:{status:'atual',badge:'VOCÊS ESTÃO AQUI · Sala Segura',title:'McDonald\'s — A Toca do Bopca',
+    sub:'Zona Segura: combate desativado. Onde conheceram o Guia, comeram e descansaram.',
+    read:'A passagem se abre numa lanchonete impossível, escavada na rocha: balcão, lampiões de fungo, cheiro de fritura. Atrás do caixa, um goblin atarracado de avental e óculos de meia-lua: "Carne fresca. Bem-vindos. Eu sou o Bopca. Não morram dentro da loja, por favor."',
+    body:`<div class="sec"><h4>Antes de seguir — checklist da Sala Segura</h4><ul class="tips">
+      <li><b>Caixas Bronze:</b> cada crawler tinha 2 — confirme se abriram (no dashboard: 🎁 Abrir).</li>
+      <li><b>Pacote de Boas-Vindas:</b> 1 arma Comum à escolha + 1 Poção de Cura (ou Bandagens de Luta p/ pugilistas).</li>
+      <li><b>Descanso Diário:</b> zera cooldowns, remove exaustão, enche HP/PM.</li>
+      <li><b>Loja do Bopca / Mercado:</b> vender duplicatas por ouro, comprar consumíveis (Mercado do Bopca no painel).</li>
+      <li><b>Guia da Masmorra:</b> só fala aqui dentro — use para dicas, lore e humor.</li></ul></div>
+      <div class="sec"><h4>O gancho (leia ao saírem)</h4>
+      <div class="read">Bopca limpa um copo que não vai ficar limpo: "Vão descer, né? Só um aviso: o Rei daqui, o Groznak... gordo, covarde, usa um cone na cabeça. Manda os outros morrerem por ele. E o andar não vai durar — quando o Sistema cansa de um piso, ele recolhe. Não fiquem passeando."</div>
+      <div class="sys">[SISTEMA] "Lembrete amigável: o Andar 1 entrará em manutenção em breve. 'Em breve' é deliberadamente vago. Sintam-se pressionados."</div></div>
+      <div class="sec"><h4>⏳ Relógio de colapso (ativa agora)</h4><div class="key">A partir daqui, se enrolarem (descansar fora da zona segura, explorar tudo 2×), mande <b>+1d4 Goblins Batedores</b> como "reforço de limpeza" e endureça o tom.</div></div>
+      <div class="sec"><h4>3 passagens à frente</h4><div class="hint">Apresente três saídas; qualquer uma leva à Linha de Frente Goblin (próxima sala).</div></div>`},
+
+  frente:{status:'frente',badge:'À FRENTE · Cena 3',title:'A Linha de Frente Goblin',
+    sub:'O teste de verdade: parede de escudos + curandeiro. "Os monstros" que faltam.',
+    read:'Além da toca, o túnel se abre numa câmara ampla, barricada com lajes de pedra e ossos. Goblins em formação batem lanças contra escudos num ritmo surdo. Atrás deles, um goblin coberto de ossos e tinta sacode um chocalho e GUINCHA — e as feridas dos companheiros começam a fechar.',
+    body:`<div class="sec"><h4>Encontro</h4>
+      ${enemy('Goblin Lanceiro ×2','','Nv7 · HP 110 · Def 11 · Prec +7 · Lança 15/26/40 [FOR]','Alcance 2 m. Parede de Escudos: adjacentes entre si, +2 de Defesa e reduzem em 1 a faixa do 1º golpe recebido por turno.')}
+      ${enemy('Goblin Xamã ×1','PRIORIDADE','Nv8 · HP 180 · Def 11 · Prec +7 · Faísca Vodu 14/24/36 [INT]','Conjurador: a cada turno CURA 50 HP num goblin (ou 25 em área) OU amaldiçoa um herói (Marcado + −2). Escudo de mana: 1ª faixa Alta recebida por rodada vira Média.')}
+      <div class="hint">Mesa de 5 no nível 7–10: use <b>3–4 Lanceiros</b> + o Xamã. Se o alarme da Cena 1 não foi contido: +1 Lanceiro. Grupo forte? +1 Goblin Bombista (HP 90, Bomba 20/34/52 em área, explode 28 ao morrer).</div></div>
+      <div class="sec"><h4>A lição — prioridade de abate</h4>
+      <div class="key">Enquanto o <b>Xamã</b> viver, a parede se regenera. A mesa precisa entender SOZINHA que tem de furar a formação e calar o do chocalho. Não diga — deixe a frustração ensinar, e comemore quando a ficha cair.</div></div>
+      <div class="sec"><h4>Falas</h4>
+      <div class="fala">[SISTEMA] "Detectado: barulho excessivo. A vizinhança foi notificada."</div>
+      <div class="fala">Apresentador (quando o Xamã cai): "E O CHOCALHO SILENCIA! A plateia estava GRITANDO por isso!" — dê PA generoso.</div></div>
+      <div class="sec"><h4>Saída</h4><div class="hint">Uma rampa de pedra desce até um grande portão entalhado com caras de goblin. Só há um caminho à frente — e tudo bem, eles já <i>querem</i> avançar.</div></div>`},
+
+  carrasco:{status:'frente',badge:'À FRENTE · Cena 4',title:'O Portão do Carrasco',
+    sub:'O muro antes do chefe. O hobgoblin que pune quem cai.',
+    read:'O portão de pedra está entreaberto, e algo o bloqueia: uma silhueta uma cabeça mais alta que qualquer goblin, blindada com placas e ossos, segurando um machado tosco. Ele não grita. Não corre. Apenas levanta o machado e espera, com a paciência de quem já fez isso muitas vezes.',
+    body:`<div class="sec"><h4>Encontro</h4>
+      ${enemy('Hobgoblin Carrasco','ELITE · GATE','Nv9 · HP 480 · Def 14 · Prec +9 · Machado Grande 38/64/98 [FOR]','Disciplinado: imune a Atordoado, Derrubado e medo. Golpe Amplo: 2 alvos adjacentes. <b>EXECUÇÃO</b>: dano DOBRADO contra Derrubados ou abaixo de 1/3 do HP (pode matar de um golpe). Couraça: −1 faixa em todo dano físico recebido.')}
+      <div class="hint">Mini-boss de verdade — segura o grupo por várias rodadas. Para apimentar: na 2ª rodada chega 1 Goblin Montado em Rato Gigante (HP 220, Investida 22/38/58, +1 faixa e Derruba se investir 4 m+).</div></div>
+      <div class="sec"><h4>Função na sessão</h4>
+      <div class="key">Ensina a mesa a <b>focar fogo</b>, gerir cura e respeitar quem pune quem cai. Se a luta ficar brutal demais, deixe-o "recuar para avisar o Rei" abaixo de 10 HP — vira tensão para o trono em vez de um TPK.</div></div>
+      <div class="sec"><h4>Falas</h4>
+      <div class="fala">[SISTEMA] "Esse aqui tem 4 estrelas de avaliação dos espectadores. Tentem fazer por merecer."</div></div>`},
+
+  groznak:{status:'boss',badge:'CHEFE · Cena 5',title:'O Trono de Groznak',
+    sub:'O Rei-Goblin covarde. O clímax do Andar 1.',
+    read:'O portão abre para uma caverna-catedral, com estalactites como lanças e um riacho no escuro. Sobre um trono de crânios, espremido, o maior e mais gordo goblin que já viram, com um cone de trânsito laranja torto na cabeça à guisa de coroa. Dois Lanceiros o guardam. Ele boceja e estala os dedos. Os Lanceiros avançam. Ele não.',
+    body:`<div class="sec"><h4>Encontro</h4>
+      ${enemy('GROZNAK, o Rei-Goblin','BOSS','Nv10 · HP 1800 · Def 14 · Prec +11 · Cutelo Real 42/70/108 [FOR]','Perigoso para 5 crawlers nível 9–10. Sobrevive ~5–6 rodadas de fogo concentrado.')}
+      ${enemy('Goblin Lanceiro ×2–4 (escolta)','','Nv7 · HP 110 · Def 11 · Prec +7 · Lança 15/26/40 [FOR]','Parede de Escudos entre si (+2 Def). Use 2–4 na escolta inicial.')}</div>
+      <div class="sec"><h4>Mecânica-chave</h4>
+      <div class="key"><b>Escudo de Lacaios:</b> enquanto houver ≥1 goblin adjacente a Groznak, ataques contra ELE sofrem <b>−1 faixa</b> E ele <b>redireciona metade do dano</b> para um lacaio. A mesa TEM de limpar a escolta para machucá-lo. Sublinhe pela ficção: ele se encolhe atrás dos capangas e ri.</div>
+      <div class="key"><b>Fase 1 (&gt;66% HP) — Ordens do Rei:</b> ação bônus por rodada: convoca 1d4 Batedores OU dá +3 Precisão a todos os goblins.</div>
+      <div class="key"><b>Fase 2 (66–33% HP) — Fúria:</b> +1 Mult de dano, −2 Def, e ataca <b>2×</b> por turno.</div>
+      <div class="key"><b>Fase 3 (≤33% HP) — Birra Real:</b> ataca <b>3×</b> por turno e 1×/rodada solta um <b>Golpe de Cone</b> em área (faixa Alta a todos a 3 m). É aqui que ele mata.</div></div>
+      <div class="sec"><h4>Falas do chefe</h4>
+      <div class="fala">Início: "VOCÊS sabem quem EU sou? Eu sou o REI! Guardas! GUARDAS! Façam... a coisa de guarda!"</div>
+      <div class="fala">Ao perder a escolta: "Não, não — voltem aqui! É uma ordem REAL! Eu pago bem! ...eu pago em batata!"</div>
+      <div class="fala">Fase 2: "TUDO BEM! Eu mesmo faço! Como sempre tenho que fazer TUDO nesse covil!"</div>
+      <div class="fala">Apresentador (golpe final): "E O REI DOS ESCOMBROS... CAI! Deem uma salva de palmas para os cinco malucos que limparam o Andar 1!"</div></div>
+      <div class="sec"><h4>Recompensas garantidas</h4>
+      <div class="loot">• 1 <b style="color:var(--r-prata)">Caixa Prata</b> por jogador + 1 item <b style="color:var(--r-raro)">Raro</b> garantido<br>• A <b>Coroa de Cone</b> (acessório cômico) + ouro espalhado pelo trono<br>• Conquista <b>"Regicida"</b> para todos (sugestão: +2 PS e um título)<br>• XP: ao fim do Andar 1 o grupo deve estar por volta do <b>nível 6–7</b>.</div></div>`},
+
+  descida:{status:'descida',badge:'ENCERRAMENTO',title:'A Descida para o Andar 2',
+    sub:'Quando Groznak cai, o andar desaba — clímax de fuga.',
+    read:'Rachaduras correm pelas paredes e as estalactites despencam. No fundo da caverna-catedral, uma escadaria escavada na pedra desce para uma escuridão que respira ar quente. Atrás de vocês, o teto cede — literalmente. Não há para onde ir, a não ser para baixo.',
+    body:`<div class="sec"><h4>Como conduzir</h4>
+      <div class="sys">[SISTEMA] "Parabéns, crawlers! Andar 1: concluído. Como recompensa, vocês ganham o direito de descer para um lugar PIOR. A passagem está aberta. O Andar 1 será reciclado em... agora, na verdade. Corram."</div>
+      <div class="key">Transforme a saída numa <b>corrida</b>: teto caindo, estalactites, urgência. Não é punição — é adrenalina de fim de episódio. Quem agir com estilo na fuga ainda ganha PA.</div></div>
+      <div class="sec"><h4>Gancho do Andar 2</h4>
+      <div class="hint">O ar quente que sobe pela escada cheira a enxofre e... pipoca. O programa só está começando.</div></div>
+      <div class="sec"><h4>Lembrete</h4><div class="hint">Suba o Andar para os dashboards: no Painel do Mestre, mude o campo <b>Andar → 2</b> (ajusta o Mercado do Bopca e o tier de loot).</div></div>`}
+};
+function sel(id){
+  document.querySelectorAll('.room').forEach(r=>r.classList.toggle('sel',r.dataset.room===id));
+  const r=ROOMS[id]; if(!r)return;
+  const col=C[r.status]||'var(--gold)';
+  document.getElementById('detail').innerHTML=
+    `<span class="badge" style="background:${col};color:#10131a">${r.badge}</span>
+     <div class="d-title">${r.title}</div>
+     <div class="d-sub">${r.sub}</div>
+     ${r.read?`<div class="sec"><h4>📖 Leia em voz alta</h4><div class="read">${r.read}</div></div>`:''}
+     ${r.body}`;
+  document.getElementById('detail').scrollTop=0;
+}
+// abre direto na sala atual
+sel('saferoom');
+</script>
+</body>
+</html>

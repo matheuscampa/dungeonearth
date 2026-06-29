@@ -150,7 +150,7 @@ A partir daqui, o **relógio de colapso** está ativo (ver acima).
 > **[Leia em voz alta]**
 > Além da toca, o túnel se abre numa câmara ampla, barricada com lajes de pedra e ossos amarrados. Goblins em formação batem lanças contra escudos de casco e madeira, num ritmo surdo. Atrás deles, um goblin coberto de ossos e tinta sacode um chocalho e GUINCHA — e as feridas dos companheiros começam a fechar.
 
-**Encontro:** **2 Goblins Lanceiros** (parede de escudos: +1 Def entre si; alcance 2 m) + **1 Goblin Xamã** (cura 8 HP num goblin por turno OU amaldiçoa um herói). Se o alarme da Cena 1 não foi contido, **+1 Lanceiro**. Opcional para grupos fortes: **+1 Goblin Bombista**.
+**Encontro (mesa de 5, nível 7–10):** **3–4 Goblins Lanceiros** (HP 110, Def 11, Prec +7, Lança 15/26/40; parede de escudos: +2 Def entre si e −1 faixa no 1º golpe recebido/turno; alcance 2 m) + **1 Goblin Xamã** (HP 180, Faísca 14/24/36; cura 50 HP num goblin/turno OU amaldiçoa um herói; escudo de mana). Se o alarme da Cena 1 não foi contido, **+1 Lanceiro**. Opcional: **+1 Goblin Bombista** (HP 90, Bomba 20/34/52).
 
 **A lição:** **prioridade de abate**. Enquanto o Xamã viver, a parede se regenera. A mesa precisa entender sozinha que tem de furar a formação e calar o do chocalho. Não diga — deixe a frustração ensinar, e então comemore quando a ficha cair.
 
@@ -165,7 +165,7 @@ A partir daqui, o **relógio de colapso** está ativo (ver acima).
 > **[Leia em voz alta]**
 > O portão de pedra está entreaberto, e algo o bloqueia: uma silhueta uma cabeça mais alta que qualquer goblin, blindada com placas de metal e ossos amarrados ao corpo, segurando um machado tosco de pedra e ferro. Ele não grita. Ele não corre. Ele apenas levanta o machado e espera, com a paciência de quem já fez isso muitas vezes.
 
-**Encontro:** **1 Hobgoblin Carrasco** (HP 44, Def 8, Prec +4, Machado Grande 5/9/15, **imune a Atordoado e medo**, **Execução: dano dobrado contra Derrubados ou alvos abaixo de 1/4 do HP**). Para apimentar: acrescente **1 Goblin Montado em Rato Gigante** que chega pela retaguarda na 2ª rodada.
+**Encontro:** **1 Hobgoblin Carrasco** (HP 480, Def 14, Prec +9, Machado Grande 38/64/98, **imune a Atordoado, Derrubado e medo**, **Golpe Amplo** em 2 alvos, **Execução: dano DOBRADO contra Derrubados ou alvos abaixo de 1/3 do HP** — pode matar de um golpe, **Couraça**: −1 faixa em todo dano físico). É um mini-boss de verdade: segura a mesa por várias rodadas. Para apimentar: acrescente **1 Goblin Montado em Rato Gigante** (HP 220, Investida 22/38/58) que chega pela retaguarda na 2ª rodada.
 
 O Carrasco é o **muro antes do chefe**: ensina a mesa a focar fogo, gerir cura e respeitar um inimigo que pune quem cai. Se a luta for brutal demais, deixe-o "recuar para avisar o Rei" abaixo de 10 HP — vira tensão para o trono em vez de um TPK.
 
@@ -179,11 +179,12 @@ O Carrasco é o **muro antes do chefe**: ensina a mesa a focar fogo, gerir cura 
 > **[Leia em voz alta]**
 > O portão se abre para uma **caverna-catedral**, vasta, com estalactites como lanças apontando do alto e um riacho subterrâneo correndo no escuro. Montanhas de tralha saqueada e ossos sobem até a escuridão, coroadas por um trono de crânios e tranqueira. Nele, espremido, está o maior e mais gordo goblin que vocês já viram, com um cone de trânsito laranja torto na cabeça à guisa de coroa (saque da superfície, é claro). Dois Lanceiros montam guarda ao seu lado. Ele os encara, boceja, e estala os dedos. Os Lanceiros avançam. Ele não.
 
-**Encontro:** **GROZNAK, o Rei-Goblin** (HP 110, Def 8, Prec +5, Cutelo Real 5/10/16) + **2 Goblins Lanceiros** de escolta. Veja a carta de chefe no bestiário. Mecânicas-chave:
+**Encontro (perigoso para 5 crawlers nível 9–10):** **GROZNAK, o Rei-Goblin** (HP 1800, Def 14, Prec +11, Cutelo Real 42/70/108) + **2–4 Goblins Lanceiros** de escolta. Deve sobreviver ~5–6 rodadas de fogo concentrado. Mecânicas-chave:
 
-- **Escudo de Lacaios:** enquanto houver ao menos 1 goblin adjacente a Groznak, ataques contra ELE sofrem **−1 faixa**. A mesa TEM de limpar a escolta para machucá-lo de verdade. É o coração da luta — sublinhe pela ficção (ele se encolhe atrás dos capangas, ri).
-- **Fase 1 (>50% HP) — Ordens do Rei:** ação bônus por rodada, alternando: convoca 1d4 Batedores OU dá +2 Precisão a todos os goblins.
-- **Fase 2 (≤50% HP) — Birra Real:** sem mais escudos humanos, ele surta — entra em Fúria (+1 Mult, −2 Def) e ataca **2×** por turno.
+- **Escudo de Lacaios:** enquanto houver ao menos 1 goblin adjacente a Groznak, ataques contra ELE sofrem **−1 faixa** E ele **redireciona metade do dano** para um lacaio. A mesa TEM de limpar a escolta para machucá-lo de verdade. É o coração da luta — sublinhe pela ficção (ele se encolhe atrás dos capangas, ri).
+- **Fase 1 (>66% HP) — Ordens do Rei:** ação bônus por rodada: convoca 1d4 Batedores OU dá +3 Precisão a todos os goblins.
+- **Fase 2 (66–33% HP) — Fúria:** +1 Mult de dano, −2 Def, e ataca **2×** por turno.
+- **Fase 3 (≤33% HP) — Birra Real:** ataca **3×** por turno e, 1×/rodada, solta um **Golpe de Cone** em área (faixa Alta a todos a 3 m). É aqui que ele mata — cuidado com TPK.
 
 **Falas do chefe (use à vontade):**
 
@@ -206,7 +207,7 @@ Quando Groznak cai, o cone-coroa rola pela rocha e tudo treme.
 > Rachaduras correm pelas paredes de rocha e as estalactites começam a despencar. No fundo da caverna-catedral, uma escadaria escavada na pedra desce para uma escuridão que respira ar quente. Atrás de vocês, o teto cede — literalmente. Não há para onde ir, a não ser para baixo.
 
 **Recompensas garantidas:**
-- **Loot do chefe:** 1 Caixa Prata por jogador + 1 item Raro garantido + a **Coroa de Cone** (acessório cômico) + ouro espalhado pelo trono.
+- **Loot do chefe:** 1 Caixa Ouro por jogador + 1 item Épico garantido + a **Coroa de Cone** (acessório cômico) + ouro espalhado pelo trono.
 - **Conquista "Regicida"** para todos (ver futuro deck de Conquistas — recompensa sugerida: +2 PS e um título).
 - **XP e nível:** cada crawler somou o próprio XP a cada abate (Lacaio 5 · Padrão 10 · Elite 25 · Chefe 80 no Andar 1; **golpe final = dobro**) mais as conquistas. Ao fim do Andar 1, o grupo deve estar por volta do **nível 6–7** (ritmo ~6 níveis/andar; ver Sistema §14.2).
 
