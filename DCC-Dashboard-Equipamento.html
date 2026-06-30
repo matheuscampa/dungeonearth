@@ -207,6 +207,7 @@
   .atk-dmg b{font-size:13px;color:#ffcf9a}
   .atk-prec{color:var(--accent2);margin-left:6px}
   .atk-mult{color:#ffcf9a;margin-left:6px;font-weight:700}
+  .atk-crit{color:#ff8a5c;margin-left:6px;font-weight:700}
   .atk-pm{display:inline-block;margin-left:6px;font-size:9px;font-weight:800;color:#cfe2ff;background:#1c2c46;border:1px solid #34507e;border-radius:8px;padding:1px 6px}
   .atk-foot{font-size:9.5px;color:var(--dim);margin-top:7px;line-height:1.35}
   /* companheiros */
@@ -979,12 +980,15 @@ function skillDamage(s){
 function gearPrec(){let p=0;Object.values(state.cards).forEach(c=>p+=(+c.prec||0));return p;}
 // custo de PM do ataque básico: varinha = 1, cajado = 2 (ou campo pm do item, se houver)
 function weaponPM(c){ if(c.pm!=null)return +c.pm||0; const t=c.type||''; if(/Cajado/i.test(t))return 2; if(/Varinha/i.test(t))return 1; return 0; }
-function atkRow(name,tag,bands,prec,color,mult,pm){
+// multiplicador de crítico: SEMPRE no mínimo 2; itens/skills que melhoram o crítico só aumentam
+function critMultOf(text){ const m=(text||'').match(/cr[íi]tic[oa][^.;]*?[×x]\s*(\d+(?:[.,]\d+)?)/i); const v=m?parseFloat(m[1].replace(',','.')):0; return Math.max(2,v||0); }
+function atkRow(name,tag,bands,prec,color,mult,pm,critM){
+  const cm=critM&&critM>2?critM:2; const crit=Math.round((bands[2]||0)*cm);
   const mtxt=(mult!=null)?`<span class="atk-mult">×${multStrOf(mult)}</span>`:'';
   const pmtxt=pm?`<span class="atk-pm">🔷 ${pm} PM</span>`:'';
   return `<div class="atk" style="border-left-color:${color}">
     <div class="atk-top"><span class="atk-name">${escapeHTML(name)}${pmtxt}</span><span class="atk-tag">${escapeHTML(tag)}</span></div>
-    <div class="atk-dmg"><b>${bands[0]}</b> / <b>${bands[1]}</b> / <b>${bands[2]}</b>${mtxt}<span class="atk-prec">Prec +${prec}</span></div>
+    <div class="atk-dmg"><b>${bands[0]}</b> / <b>${bands[1]}</b> / <b>${bands[2]}</b>${mtxt}<span class="atk-prec">Prec +${prec}</span><span class="atk-crit">Crít ${crit}${cm>2?' ×'+multStrOf(cm):''}</span></div>
   </div>`;
 }
 function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells/skills com dano)
@@ -995,14 +999,14 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
   let ubd=0,ubp=0; Object.values(state.cards).forEach(c=>{ubd+=(+c.ubd||0);ubp+=(+c.ubp||0);});
   const gp=gearPrec(); const spm=gearBon().spm;
   const um=regVal/5, ub=[1,2,4].map(b=>Math.max(1,Math.floor((b+ubd)*um)));
-  rows.push(atkRow('Desarmado','['+reg+'] · punhos'+(ubd?' +'+ubd+'f gear':''), ub, isqrt(regVal)+ubp+gp, '#ff9d5c', um));
+  rows.push(atkRow('Desarmado','['+reg+'] · punhos'+(ubd?' +'+ubd+'f gear':''), ub, isqrt(regVal)+ubp+gp, '#ff9d5c', um, 0, 2));
   // 2) Armas equipadas (têm faixas e atributo regente)
   Object.values(state.cards).forEach(c=>{
     if((c.d1||c.d2||c.d3) && c.attr){
       const av=effAttr(c.attr), m=av/5;
       const b=[c.d1,c.d2,c.d3].map(x=>Math.max(1,Math.floor((+x||0)*m)));
       const wp=weaponPM(c), pm=wp?Math.max(1,wp-spm):0;
-      rows.push(atkRow(c.name||'Arma','['+c.attr+'] · arma', b, isqrt(av)+gp, RAR[c.rar]?RAR[c.rar].cor:'var(--r-comum)', m, pm));
+      rows.push(atkRow(c.name||'Arma','['+c.attr+'] · arma', b, isqrt(av)+gp, RAR[c.rar]?RAR[c.rar].cor:'var(--r-comum)', m, pm, critMultOf(c.fx)));
     }
   });
   // 3) Spells/skills de dano (faixas estruturadas d1/d2/d3 + attr)
@@ -1011,13 +1015,14 @@ function renderUnarmed(){ // agora: lista de ATAQUES (desarmado + armas + spells
     const av=effAttr(dm.attr), m=av/5;
     const b=dm.d.map(x=>Math.max(1,Math.floor((+x||0)*m)));
     const cost=s.passiva?'passiva':([(+s.pm>0?'PM'+Math.max(1,s.pm-spm):''),(+s.cd>0?'CD'+s.cd:'')].filter(Boolean).join('·')||'livre');
-    rows.push(atkRow(s.name,'['+dm.attr+'] · '+cost, b, isqrt(av)+gp, TR[s.track]||TR.NEU, m));
+    const sc=skillCatalog.find(x=>x.id===s.srcId)||{};
+    rows.push(atkRow(s.name,'['+dm.attr+'] · '+cost, b, isqrt(av)+gp, TR[s.track]||TR.NEU, m, 0, critMultOf((s.desc||'')+' '+(s.fx||'')+' '+(sc.desc||''))));
   });
   el.innerHTML=`
     <div class="uhead"><span class="utitle">⚔ Ataques</span>
       <span class="ureg">dano = faixa × ⌊atrib÷5⌋ · Prec = ⌊√atrib⌋ + equip</span></div>
     <div class="atk-list">${rows.join('')}</div>
-    <div class="atk-foot">Dano (Baixa/Média/Alta) e Precisão já incluem os modificadores de equipamento${gp?(' (Prec +'+gp+' de equip)'):''}. Crítico = faixa Alta × 2.
+    <div class="atk-foot">Dano (Baixa/Média/Alta) e Precisão já incluem os modificadores de equipamento${gp?(' (Prec +'+gp+' de equip)'):''}. <b>Crít</b> = faixa Alta × 2 no mínimo (itens/skills de crítico só aumentam; o ×N ao lado do dano é o multiplicador de atributo, não o crítico).
     🔷 Varinhas custam 1 PM e cajados 2 PM por ataque básico. Improvisada: 1/3/6 [FOR].</div>`;
 }
 function render(){renderDerived();renderBoard();renderInventory();renderBoxes();renderSkills();renderUnarmed();renderHp();renderCompanions();renderAp();renderAch();updateAttrSqrt();syncResourceInputs();renderXpInfo();}

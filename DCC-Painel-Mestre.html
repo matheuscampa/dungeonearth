@@ -565,13 +565,15 @@ function playerAttacks(p){
   const at=p.attrEff||p.attr||{FOR:1,DEX:1,CON:1,INT:1,CHA:1}; const cards=p.cards||{};
   let gp=0,spm=0; Object.values(cards).forEach(c=>{gp+=(+c.prec||0); spm+=(+c.spm||0);});
   const rows=[]; const u=unarmedCalc(at,cards);
-  rows.push({name:'Desarmado',tag:'['+u.reg+'] punhos',b:u.b,prec:u.prec+gp,mult:u.mult,pm:0});
-  Object.values(cards).forEach(c=>{ if((c.d1||c.d2||c.d3)&&c.attr){ const av=at[c.attr]||1,m=av/5; const b=[c.d1,c.d2,c.d3].map(x=>Math.max(1,Math.floor((+x||0)*m))); const wp=weaponPMm(c),pm=wp?Math.max(1,wp-spm):0; rows.push({name:c.name||'Arma',tag:'['+c.attr+'] arma',b,prec:isqrt(av)+gp,mult:multStr(m),pm}); }});
-  (p.skills||[]).forEach(s=>{ const dm=skillDmgM(s); if(!dm)return; const av=at[dm.attr]||1,m=av/5; const b=dm.d.map(x=>Math.max(1,Math.floor((+x||0)*m))); const pm=(+s.pm>0)?Math.max(1,s.pm-spm):0; rows.push({name:s.name,tag:'['+dm.attr+'] spell',b,prec:isqrt(av)+gp,mult:multStr(m),pm}); });
+  rows.push({name:'Desarmado',tag:'['+u.reg+'] punhos',b:u.b,prec:u.prec+gp,mult:u.mult,pm:0,cm:2});
+  Object.values(cards).forEach(c=>{ if((c.d1||c.d2||c.d3)&&c.attr){ const av=at[c.attr]||1,m=av/5; const b=[c.d1,c.d2,c.d3].map(x=>Math.max(1,Math.floor((+x||0)*m))); const wp=weaponPMm(c),pm=wp?Math.max(1,wp-spm):0; rows.push({name:c.name||'Arma',tag:'['+c.attr+'] arma',b,prec:isqrt(av)+gp,mult:multStr(m),pm,cm:critMultM(c.fx)}); }});
+  (p.skills||[]).forEach(s=>{ const dm=skillDmgM(s); if(!dm)return; const av=at[dm.attr]||1,m=av/5; const b=dm.d.map(x=>Math.max(1,Math.floor((+x||0)*m))); const pm=(+s.pm>0)?Math.max(1,s.pm-spm):0; const sc=SKILL_BY_ID[s.srcId]||SKILL_BY_ID[s.id]||SKILL_BY_NAME[norm(s.name)]||{}; rows.push({name:s.name,tag:'['+dm.attr+'] spell',b,prec:isqrt(av)+gp,mult:multStr(m),pm,cm:critMultM((s.desc||'')+' '+(sc.desc||''))}); });
   return rows;
 }
+function critMultM(text){ const m=(text||'').match(/cr[íi]tic[oa][^.;]*?[×x]\s*(\d+(?:[.,]\d+)?)/i); const v=m?parseFloat(m[1].replace(',','.')):0; return Math.max(2,v||0); }
 function attacksHTML(p){
-  return playerAttacks(p).map(r=>`<div class="una">⚔ ${escapeHTML(r.name)} <b>${r.b[0]} / ${r.b[1]} / ${r.b[2]}</b> <span style="color:var(--dim)">${escapeHTML(r.tag)} · ×${r.mult} · Prec +${r.prec}${r.pm?' · 🔷'+r.pm+'PM':''}</span></div>`).join('');
+  return playerAttacks(p).map(r=>{ const cm=r.cm&&r.cm>2?r.cm:2; const crit=Math.round((r.b[2]||0)*cm);
+    return `<div class="una">⚔ ${escapeHTML(r.name)} <b>${r.b[0]} / ${r.b[1]} / ${r.b[2]}</b> <span style="color:var(--dim)">${escapeHTML(r.tag)} · ×${r.mult} · Prec +${r.prec} · <span style="color:#ff8a5c">Crít ${crit}${cm>2?' ×'+multStr(cm):''}</span>${r.pm?' · 🔷'+r.pm+'PM':''}</span></div>`;}).join('');
 }
 
 /* ===================== Encontros (tracker de iniciativa) ===================== */
