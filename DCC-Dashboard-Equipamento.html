@@ -740,8 +740,13 @@ const DEFAULT_FB_CFG={apiKey:"AIzaSyCWfU58HVTvLK4ej5yDH06mr2CQtxsde-8",authDomai
 let fbApp=null, fbDb=null;
 // Inicializa o app + autenticação já no carregamento, ANTES de conectar na mesa,
 // pois as regras do banco agora exigem estar logado (auth !== null).
+console.log('[DCC] Dashboard carregando…', new Date().toISOString());
 if(!localStorage.getItem(FBKEY)) localStorage.setItem(FBKEY, JSON.stringify(DEFAULT_FB_CFG));
-try{ fbApp = firebase.initializeApp(JSON.parse(localStorage.getItem(FBKEY))); fbDb = firebase.database(); }catch(e){}
+try{
+  fbApp = firebase.initializeApp(JSON.parse(localStorage.getItem(FBKEY)));
+  fbDb = firebase.database();
+  console.log('[DCC] Firebase app inicializado OK.');
+}catch(e){ console.error('[DCC] ERRO ao inicializar Firebase:', e); }
 const fbAuth = firebase.auth();
 // (a identidade do jogador — PIDKEY, URL_MESA, URL_PID, playerId — já foi definida no topo do script)
 
@@ -1900,12 +1905,13 @@ async function init(){
 }
 let authRedirectTimer=null;
 fbAuth.onAuthStateChanged(function(user){
+  console.log('[DCC] onAuthStateChanged →', user ? ('logado: '+user.email+' ('+user.uid+')') : 'SEM usuário', new Date().toISOString());
   if(!user){
     // A sessão pode ainda estar sendo restaurada (indexedDB) — só redireciona
     // se continuar deslogado depois de um tempinho, e cancela se um usuário aparecer depois.
-    document.getElementById('syncStatus').innerHTML='Sincronização: <b style="color:#9aa0a6">verificando login…</b>';
+    document.getElementById('syncStatus').innerHTML='Sincronização: <b style="color:#9aa0a6">verificando login… (se travar, veja o Console — F12)</b>';
     if(!authRedirectTimer){
-      authRedirectTimer=setTimeout(function(){ location.href='index.html'; }, 2500);
+      authRedirectTimer=setTimeout(function(){ console.log('[DCC] Sem login após espera — redirecionando pro index.html'); location.href='index.html'; }, 4000);
     }
     return;
   }

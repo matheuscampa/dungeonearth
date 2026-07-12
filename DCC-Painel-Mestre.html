@@ -362,8 +362,13 @@ const URL_MESA_M=(URLP_M.get('mesa')||'').trim();
 let fbApp=null, fbDb=null, currentRef=null, gmRef=null;
 // Inicializa o app + autenticação já no carregamento, ANTES de conectar na mesa,
 // pois as regras do banco agora exigem estar logado (auth !== null).
+console.log('[DCC] Painel Mestre carregando…', new Date().toISOString());
 if(!localStorage.getItem(FBKEY)) localStorage.setItem(FBKEY, JSON.stringify(DEFAULT_FB_CFG));
-try{ fbApp = firebase.initializeApp(JSON.parse(localStorage.getItem(FBKEY))); fbDb = firebase.database(); }catch(e){}
+try{
+  fbApp = firebase.initializeApp(JSON.parse(localStorage.getItem(FBKEY)));
+  fbDb = firebase.database();
+  console.log('[DCC] Firebase app inicializado OK.');
+}catch(e){ console.error('[DCC] ERRO ao inicializar Firebase:', e); }
 const fbAuth = firebase.auth();
 let gmState={nivel:1,xp:0,xpAlvo:300,colapso:0,andar:1};
 const COL_PIPS=6;
@@ -977,12 +982,13 @@ function init(){
 }
 let authRedirectTimer=null;
 fbAuth.onAuthStateChanged(function(user){
+  console.log('[DCC] onAuthStateChanged →', user ? ('logado: '+user.email+' ('+user.uid+')') : 'SEM usuário', new Date().toISOString());
   if(!user){
     // A sessão pode ainda estar sendo restaurada (indexedDB) — só redireciona
     // se continuar deslogado depois de um tempinho, e cancela se um usuário aparecer depois.
-    setStatus('verificando login…',false);
+    setStatus('verificando login… (se travar aqui, veja o Console do navegador — F12)',false);
     if(!authRedirectTimer){
-      authRedirectTimer=setTimeout(function(){ location.href='index.html'; }, 2500);
+      authRedirectTimer=setTimeout(function(){ console.log('[DCC] Sem login após espera — redirecionando pro index.html'); location.href='index.html'; }, 4000);
     }
     return;
   }
