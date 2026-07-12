@@ -323,6 +323,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 let lastData={};
 function exportBackup(){
@@ -359,6 +360,11 @@ const DEFAULT_FB_CFG={apiKey:"AIzaSyCWfU58HVTvLK4ej5yDH06mr2CQtxsde-8",authDomai
 const URLP_M=new URLSearchParams(location.search);
 const URL_MESA_M=(URLP_M.get('mesa')||'').trim();
 let fbApp=null, fbDb=null, currentRef=null, gmRef=null;
+// Inicializa o app + autenticação já no carregamento, ANTES de conectar na mesa,
+// pois as regras do banco agora exigem estar logado (auth !== null).
+if(!localStorage.getItem(FBKEY)) localStorage.setItem(FBKEY, JSON.stringify(DEFAULT_FB_CFG));
+try{ fbApp = firebase.initializeApp(JSON.parse(localStorage.getItem(FBKEY))); fbDb = firebase.database(); }catch(e){}
+const fbAuth = firebase.auth();
 let gmState={nivel:1,xp:0,xpAlvo:300,colapso:0,andar:1};
 const COL_PIPS=6;
 const isqrt=x=>Math.floor(Math.sqrt(Math.max(0,x)));
@@ -965,12 +971,18 @@ function init(){
   renderMonsters();
   renderAchBoard();
   loadCats();
-  if(!localStorage.getItem(FBKEY)) localStorage.setItem(FBKEY,JSON.stringify(DEFAULT_FB_CFG));
   if(URL_MESA_M) localStorage.setItem(ROOMKEY,URL_MESA_M);
   const room=localStorage.getItem(ROOMKEY); if(room)document.getElementById('roomCode').value=room;
   if(room&&localStorage.getItem(FBKEY))connectCloud();
 }
-init();
+fbAuth.onAuthStateChanged(function(user){
+  if(!user){
+    setStatus('faça login no Portal para acessar esta mesa',false);
+    setTimeout(function(){ location.href='DCC-Portal-Login.html'; }, 1500);
+    return;
+  }
+  init();
+});
 </script>
 </body>
 </html>

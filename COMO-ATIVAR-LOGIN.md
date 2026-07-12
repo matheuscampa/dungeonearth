@@ -8,7 +8,9 @@ Agora existe um **portal com login por email e senha**, em vez de cada um só di
 |---|---|
 | `DCC-Portal-Login.html` | Tela de entrar / criar conta |
 | `DCC-Portal.html` | Home depois de logar: lista suas mesas como **Jogador** (com link pra ficha) e suas mesas como **Mestre** (criar mesa, gerar/copiar código) |
-| (já existiam) `DCC-Dashboard-Equipamento.html` e `DCC-Painel-Mestre.html` | Continuam iguais, só ganharam um botão **← Portal** pra voltar |
+| (já existiam) `DCC-Dashboard-Equipamento.html` e `DCC-Painel-Mestre.html` | Ganharam um botão **← Portal** e agora **também exigem login** — se abrir sem estar logado (nesse navegador), redirecionam pra tela de entrar |
+
+> **Importante:** se você aplicou o Passo 2 (regras exigindo login), o Dashboard e o Painel do Mestre só conseguem ler/escrever a mesa se a pessoa estiver **logada no mesmo navegador**. Por isso ambos agora checam a sessão automaticamente antes de conectar — se você entrar direto pelo link antigo sem ter logado antes, eles mandam pra `DCC-Portal-Login.html`. Depois de logar uma vez, o navegador lembra e não pede de novo.
 
 O login usa o **mesmo projeto Firebase** que já estava configurado (`dungeonearth`), então não precisa criar nada novo na nuvem — só **ligar uma chave** no Console.
 

@@ -639,6 +639,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 const SLOTS = [
   {id:'maoE', grupo:'Mãos',       nome:'Mão Esquerda', ico:'🗡', hand:true, cat:'mao'},
@@ -734,7 +735,14 @@ let editing=null, tab='cat', modalMode='slot';
 
 /* ---------- Firebase: sincronização ao vivo ---------- */
 const FBKEY='dcc_fb_cfg', ROOMKEY='dcc_room';
+// padrão da mesa (para o link pessoal funcionar com 1 clique) — precisa existir ANTES do app inicializar
+const DEFAULT_FB_CFG={apiKey:"AIzaSyCWfU58HVTvLK4ej5yDH06mr2CQtxsde-8",authDomain:"dungeonearth.firebaseapp.com",databaseURL:"https://dungeonearth-default-rtdb.firebaseio.com",projectId:"dungeonearth",storageBucket:"dungeonearth.firebasestorage.app",messagingSenderId:"528605528507",appId:"1:528605528507:web:8bf62f719a9e773607449e",measurementId:"G-6C91MQ4W56"};
 let fbApp=null, fbDb=null;
+// Inicializa o app + autenticação já no carregamento, ANTES de conectar na mesa,
+// pois as regras do banco agora exigem estar logado (auth !== null).
+if(!localStorage.getItem(FBKEY)) localStorage.setItem(FBKEY, JSON.stringify(DEFAULT_FB_CFG));
+try{ fbApp = firebase.initializeApp(JSON.parse(localStorage.getItem(FBKEY))); fbDb = firebase.database(); }catch(e){}
+const fbAuth = firebase.auth();
 // (a identidade do jogador — PIDKEY, URL_MESA, URL_PID, playerId — já foi definida no topo do script)
 
 function toggleCfg(){const b=document.getElementById('cfgbar');b.style.display=(b.style.display==='none'?'flex':'none');}
@@ -1838,7 +1846,7 @@ function renderPm(){
 
 /* ---------- init ---------- */
 // ---- padrões da mesa (para o link pessoal funcionar com 1 clique) ----
-const DEFAULT_FB_CFG={apiKey:"AIzaSyCWfU58HVTvLK4ej5yDH06mr2CQtxsde-8",authDomain:"dungeonearth.firebaseapp.com",databaseURL:"https://dungeonearth-default-rtdb.firebaseio.com",projectId:"dungeonearth",storageBucket:"dungeonearth.firebasestorage.app",messagingSenderId:"528605528507",appId:"1:528605528507:web:8bf62f719a9e773607449e",measurementId:"G-6C91MQ4W56"};
+// DEFAULT_FB_CFG já foi definido mais acima, junto da inicialização antecipada do Firebase.
 const DEFAULT_CAT_URL="https://raw.githubusercontent.com/matheuscampa/dungeonearth/refs/heads/main/DCC-Catalogo-Itens.json";
 const DEFAULT_SKILL_URL="https://raw.githubusercontent.com/matheuscampa/dungeonearth/refs/heads/main/DCC-Catalogo-Skills.json";
 function applyDefaults(){
@@ -1890,7 +1898,14 @@ async function init(){
   if(savedUrl){try{const r=await fetch(savedUrl,{cache:'no-store'});if(r.ok){setCatalog(await r.json(),true);}}catch(e){}}
   if(savedSkillUrl){try{const r=await fetch(savedSkillUrl,{cache:'no-store'});if(r.ok){setSkillCat(await r.json(),true);renderSkills();}}catch(e){}}
 }
-init();
+fbAuth.onAuthStateChanged(function(user){
+  if(!user){
+    document.getElementById('syncStatus').innerHTML='Sincronização: <b style="color:#ff8a8a">faça login no Portal</b>';
+    setTimeout(function(){ location.href='DCC-Portal-Login.html'; }, 1500);
+    return;
+  }
+  init();
+});
 </script>
 </body>
 </html>
