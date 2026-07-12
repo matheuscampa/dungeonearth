@@ -1,6 +1,6 @@
 # BACKLOG — Dungeon Crawler Carl RPG
 
-*Documento vivo. Atualizado em 2026-07-02. Marque `[x]` quando concluir.*
+*Documento vivo. Atualizado em 2026-07-12. Marque `[x]` quando concluir.*
 
 Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para campanha · **P2** = polimento/expansão.
 
@@ -29,10 +29,15 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
 ## 🔜 Próximo passo imediato
 
 - [x] **Firebase + GitHub Pages no ar** — projeto criado, dashboard hospedado e Pages ativo. Falta só testar a conexão ao vivo com os jogadores na Sessão 1.
-- [x] **Portal de gestão com login (email/senha)** — `index.html` (URL única de entrada) + `DCC-Portal.html`: menu Jogador (lista de mesas + ficha) e menu Mestre (criar mesa, gerar/copiar código). `DCC-Portal-Login.html` virou redirect de compatibilidade. Reaproveita o projeto Firebase existente (Auth + Realtime Database). Guia completo em `COMO-ATIVAR-LOGIN.md`.
-  - [ ] **Pendente de você:** ativar Email/Password no Firebase Console (Passo 1 do guia) — sem isso o login não funciona.
-  - [ ] **Pendente de você:** migrar a mesa `dungeon-crawler-world` pelo portal (Passo 3 do guia) e avisar os 5 jogadores pra criarem conta.
-  - [ ] **P2 — Apertar regras do Realtime Database** para exigir login (Passo 2 do guia, opcional mas recomendado).
+- [x] **Portal de gestão com login (email/senha)** — `index.html` (URL única de entrada, a raiz do site) + `DCC-Portal.html`: menu Jogador (lista de mesas + ficha) e menu Mestre (criar mesa, gerar/copiar código). `DCC-Portal-Login.html` virou redirect de compatibilidade. Reaproveita o projeto Firebase existente (Auth + Realtime Database). Guia completo em `COMO-ATIVAR-LOGIN.md`.
+  - [x] Ativar Email/Password no Firebase Console (Passo 1 do guia). Feito.
+  - [x] Apertar regras do Realtime Database para exigir login (Passo 2 do guia). Feito — regras de `usuarios`/`mesasInfo`/`mesas` aplicadas.
+  - [x] Migrar a mesa `dungeon-crawler-world` pelo portal (Passo 3 do guia) — mesa recriada com código customizado, fichas dos jogadores preservadas. Feito.
+  - [ ] **Pendente de você:** avisar os 5 jogadores pra criarem conta em `index.html` e entrarem na mesa com o código `dungeon-crawler-world` (mesmo nome de personagem de antes).
+- [x] **Correção: `permission_denied` no Painel do Mestre/Dashboard** — as regras apertadas exigiam login, mas essas duas páginas nunca autenticavam no Firebase. Agora carregam o SDK de Auth e só conectam na mesa depois de confirmar a sessão logada (senão redirecionam pro login). Feito.
+- [x] **Correção: redirect prematuro de volta pro login** — o gate de auth do Painel/Dashboard disparava o redirect assim que via `user=null` (estado transitório enquanto a sessão salva ainda carrega), e não cancelava esse redirect se o login real chegasse logo em seguida — derrubava a página no meio do carregamento das fichas. Corrigido: agora cancela o redirect pendente assim que o usuário é confirmado. Feito.
+- [x] **URL única de entrada** — `index.html` é a página raiz do site (login/cadastro); depois de logar vai direto pro Portal. `DCC-Portal-Login.html` ficou como redirect de compatibilidade pra quem tinha o link antigo salvo. Feito.
+  - [ ] **Pendente de você:** dar commit + push dessas mudanças pro repositório do GitHub Pages pra valerem no site ao vivo (se ainda não fez).
 
 ---
 

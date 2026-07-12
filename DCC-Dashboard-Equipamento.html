@@ -1898,12 +1898,18 @@ async function init(){
   if(savedUrl){try{const r=await fetch(savedUrl,{cache:'no-store'});if(r.ok){setCatalog(await r.json(),true);}}catch(e){}}
   if(savedSkillUrl){try{const r=await fetch(savedSkillUrl,{cache:'no-store'});if(r.ok){setSkillCat(await r.json(),true);renderSkills();}}catch(e){}}
 }
+let authRedirectTimer=null;
 fbAuth.onAuthStateChanged(function(user){
   if(!user){
-    document.getElementById('syncStatus').innerHTML='Sincronização: <b style="color:#ff8a8a">faça login no Portal</b>';
-    setTimeout(function(){ location.href='index.html'; }, 1500);
+    // A sessão pode ainda estar sendo restaurada (indexedDB) — só redireciona
+    // se continuar deslogado depois de um tempinho, e cancela se um usuário aparecer depois.
+    document.getElementById('syncStatus').innerHTML='Sincronização: <b style="color:#9aa0a6">verificando login…</b>';
+    if(!authRedirectTimer){
+      authRedirectTimer=setTimeout(function(){ location.href='index.html'; }, 2500);
+    }
     return;
   }
+  if(authRedirectTimer){ clearTimeout(authRedirectTimer); authRedirectTimer=null; }
   init();
 });
 </script>
