@@ -1,6 +1,6 @@
 # BACKLOG — Dungeon Crawler Carl RPG
 
-*Documento vivo. Atualizado em 2026-06-17. Marque `[x]` quando concluir.*
+*Documento vivo. Atualizado em 2026-07-02. Marque `[x]` quando concluir.*
 
 Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para campanha · **P2** = polimento/expansão.
 
@@ -29,6 +29,10 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
 ## 🔜 Próximo passo imediato
 
 - [x] **Firebase + GitHub Pages no ar** — projeto criado, dashboard hospedado e Pages ativo. Falta só testar a conexão ao vivo com os jogadores na Sessão 1.
+- [x] **Portal de gestão com login (email/senha)** — `DCC-Portal-Login.html` + `DCC-Portal.html`: menu Jogador (lista de mesas + ficha) e menu Mestre (criar mesa, gerar/copiar código). Reaproveita o projeto Firebase existente (Auth + Realtime Database). Guia completo em `COMO-ATIVAR-LOGIN.md`.
+  - [ ] **Pendente de você:** ativar Email/Password no Firebase Console (Passo 1 do guia) — sem isso o login não funciona.
+  - [ ] **Pendente de você:** migrar a mesa `dungeon-crawler-world` pelo portal (Passo 3 do guia) e avisar os 5 jogadores pra criarem conta.
+  - [ ] **P2 — Apertar regras do Realtime Database** para exigir login (Passo 2 do guia, opcional mas recomendado).
 
 ---
 
@@ -50,6 +54,7 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
 - [ ] **P2 — Mais conquistas** por andar/feito (deck cresce com a campanha).
 
 ### Dashboard / fichas digitais
+- [ ] **P1 — Barras de vida (jogadores e monstros) no dashboard do jogador.** Exibir no dashboard do jogador uma **barra de HP de cada crawler da mesa** (puxando os HP atual/máx já publicados no Firebase) e uma **área de HP dos monstros do combate atual** (controlada/sincronizada pelo Mestre — provável novo nó `mesas/{sala}/combate`). Definir: quem edita o HP dos monstros (Mestre adiciona/dá dano), atualização ao vivo, e visual compacto (barra + número, cor por % de vida).
 - [ ] **P1 — Banco de pontos de atributo não usados.** Campo na ficha (dashboard + ficha impressa) para guardar **pontos de atributo ganhos mas ainda não distribuídos** — o jogador acumula ao subir de nível / por recompensas e gasta quando quiser. Definir: quantos pontos por nível, se há trava por andar, e refletir o saldo no Painel do Mestre.
 - [ ] **P1 — Troca de itens entre jogadores da mesa.** Permitir transferir cartas/itens (e talvez ouro) de uma ficha para outra via Firebase, sem copiar/colar manual. Definir: fluxo de oferta→aceite, alcance (precisa estar na mesma cena/Sala Segura?), e o que pode ou não ser trocado.
 - [ ] **P1 — Atualizar o XP ao subir de nível.** Hoje o XP é um campo solto. Ao bater o alvo (`50×nível`), o dashboard deve **subir o nível e debitar/zerar o XP** automaticamente (ou avisar), em vez de o jogador fazer a conta na mão. Mostrar barra de progresso até o próximo nível.

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCC RPG — Portal de Mesas</title>
+<style>
+  :root{
+    --bg:#0c0e13; --panel:#15181f; --panel2:#1c212b; --line:#2a313d;
+    --txt:#e7e9ee; --dim:#9aa0a6; --accent:#ff7a18; --accent2:#ffd166;
+    --ok:#4caf50; --err:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at 50% -10%,#1a1f2b 0,var(--bg) 60%);
+    color:var(--txt);font-family:"Segoe UI",system-ui,Arial,sans-serif;padding:18px 14px 60px;min-height:100vh}
+  .wrap{max-width:1100px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+  h1{margin:0;font-size:22px;color:var(--accent2);letter-spacing:.3px}
+  header .who{font-size:12.5px;color:var(--dim)}
+  header .who b{color:var(--txt)}
+  button{font-family:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);
+    color:var(--txt);padding:8px 13px;border-radius:8px;font-size:12.5px;transition:.15s}
+  button:hover{border-color:var(--accent);color:#fff}
+  button.primary{background:var(--accent);color:#1a1005;border-color:var(--accent);font-weight:800}
+  button.primary:hover{filter:brightness(1.08)}
+  button:disabled{opacity:.5;cursor:default}
+  section{margin-bottom:34px}
+  .sechead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .sechead h2{margin:0;font-size:16px;color:var(--txt)}
+  .sechead .hint{font-size:11.5px;color:var(--dim)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .card h3{margin:0 0 4px;font-size:15.5px}
+  .card .meta{font-size:11.5px;color:var(--dim);margin-bottom:12px}
+  .codebadge{display:inline-flex;align-items:center;gap:6px;background:#11141a;border:1px solid var(--line);
+    border-radius:7px;padding:4px 9px;font-family:monospace;font-size:12px;color:var(--accent2)}
+  .codebadge button{padding:2px 7px;font-size:10.5px}
+  .card .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .empty{color:var(--dim);font-size:13px;padding:22px;text-align:center;border:1px dashed var(--line);border-radius:12px}
+  .formcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:420px}
+  .formcard label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin:10px 0 5px}
+  .formcard input{width:100%;background:var(--panel2);border:1px solid var(--line);color:#fff;
+    border-radius:7px;padding:9px 10px;font-size:13.5px;font-family:inherit}
+  .formcard input:focus{outline:none;border-color:var(--accent)}
+  .msg{margin-top:10px;font-size:12px;border-radius:7px;padding:8px 10px;display:none}
+  .msg.err{display:block;background:#2a1414;border:1px solid #4a2020;color:var(--err)}
+  .msg.ok{display:block;background:#12241a;border:1px solid #234a30;color:#8fe0a8}
+  .toggler{display:flex;gap:8px;margin-bottom:14px}
+  .skel{opacity:.5;font-size:12.5px}
+  .dcap{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);background:#11141a;
+    border:1px solid var(--line);border-radius:5px;padding:2px 7px;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎲 Dungeon Crawler Carl — Portal de Mesas</h1>
+    <div class="who">
+      <span id="whoName">carregando…</span>
+      <button onclick="doLogout()" style="margin-left:10px">Sair</button>
+    </div>
+  </header>
+
+  <section>
+    <div class="sechead">
+      <h2>🎮 Minhas mesas (Jogador)</h2>
+      <div class="hint">mesas em que você entrou com um código</div>
+    </div>
+    <div id="playerGrid" class="grid"><div class="skel">Carregando suas mesas…</div></div>
+
+    <div style="margin-top:16px" class="formcard">
+      <b style="font-size:13px">Entrar em uma mesa com código</b>
+      <label>Código da mesa</label>
+      <input type="text" id="joinCode" placeholder="ex: corredor-do-carl-x7k2">
+      <label>Nome do seu personagem</label>
+      <input type="text" id="joinPid" placeholder="como o Mestre vai te ver na mesa">
+      <button class="primary" style="width:100%;margin-top:14px" onclick="joinMesa()">Entrar na mesa</button>
+      <div id="joinMsg" class="msg"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>🛡 Mesas que eu mestro</h2>
+      <div class="hint">crie uma mesa e mande o código para seus jogadores</div>
+    </div>
+    <div id="masterGrid" class="grid"><div class="skel">Carregando suas mesas…</div></div>
+
+    <div style="margin-top:16px" class="formcard">
+      <b style="font-size:13px">Criar nova mesa</b>
+      <label>Nome da mesa</label>
+      <input type="text" id="newMesaNome" placeholder="ex: Corredor do Carl">
+      <label>Código customizado <span class="dcap">opcional</span></label>
+      <input type="text" id="newMesaCodigo" placeholder="deixe em branco para gerar automático">
+      <div class="hint" style="margin-top:5px">Use isso para recuperar uma mesa antiga (ex: <code>dungeon-crawler-world</code>) mantendo as fichas já salvas nela.</div>
+      <button class="primary" style="width:100%;margin-top:14px" onclick="createMesa()">Criar mesa</button>
+      <div id="createMsg" class="msg"></div>
+    </div>
+  </section>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const DEFAULT_FB_CFG={apiKey:"AIzaSyCWfU58HVTvLK4ej5yDH06mr2CQtxsde-8",authDomain:"dungeonearth.firebaseapp.com",databaseURL:"https://dungeonearth-default-rtdb.firebaseio.com",projectId:"dungeonearth",storageBucket:"dungeonearth.firebasestorage.app",messagingSenderId:"528605528507",appId:"1:528605528507:web:8bf62f719a9e773607449e",measurementId:"G-6C91MQ4W56"};
+firebase.initializeApp(DEFAULT_FB_CFG);
+const auth = firebase.auth();
+const db = firebase.database();
+
+let CURRENT_UID = null, CURRENT_NAME = '';
+
+function escapeHTML(s){return (s||'').toString().replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function sanitizeCode(s){return (s||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');}
+function slugify(s){
+  return (s||'mesa').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')   // remove acentos
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40) || 'mesa';
+}
+function rand4(){return Math.random().toString(36).slice(2,6);}
+function showMsg(id, text, kind){const b=document.getElementById(id); b.textContent=text; b.className='msg '+(kind||'err');}
+function clearMsg(id){const b=document.getElementById(id); b.className='msg'; b.textContent='';}
+
+function copyToClipboard(text, btn){
+  navigator.clipboard.writeText(text).then(()=>{
+    if(btn){const old=btn.textContent; btn.textContent='copiado!'; setTimeout(()=>btn.textContent=old,1200);}
+  }).catch(()=>{ prompt('Copie o código:', text); });
+}
+
+function doLogout(){ auth.signOut().then(()=>location.href='DCC-Portal-Login.html'); }
+
+// ---------- Autenticação ----------
+auth.onAuthStateChanged(user=>{
+  if(!user){ location.href='DCC-Portal-Login.html'; return; }
+  CURRENT_UID = user.uid;
+  CURRENT_NAME = user.displayName || (user.email||'').split('@')[0];
+  document.getElementById('whoName').innerHTML = 'Logado como <b>'+escapeHTML(CURRENT_NAME)+'</b> · '+escapeHTML(user.email||'');
+  watchMinhasMesas();
+});
+
+// ---------- Lista de mesas do usuário ----------
+function watchMinhasMesas(){
+  db.ref('usuarios/'+CURRENT_UID+'/mesas').on('value', snap=>{
+    const data = snap.val() || {};
+    const jogador = Object.entries(data).filter(([id,v])=>v.papel==='jogador');
+    const mestre  = Object.entries(data).filter(([id,v])=>v.papel==='mestre');
+    renderPlayerGrid(jogador);
+    renderMasterGrid(mestre);
+  }, err=>{
+    document.getElementById('playerGrid').innerHTML = '<div class="empty">Erro ao carregar: '+escapeHTML(err.message)+'</div>';
+    document.getElementById('masterGrid').innerHTML = '<div class="empty">Erro ao carregar: '+escapeHTML(err.message)+'</div>';
+  });
+}
+
+function renderPlayerGrid(list){
+  const el = document.getElementById('playerGrid');
+  if(!list.length){ el.innerHTML='<div class="empty">Você ainda não entrou em nenhuma mesa. Peça o código ao Mestre e use o formulário abaixo.</div>'; return; }
+  el.innerHTML = list.map(([mesaId,v])=>`
+    <div class="card">
+      <h3>${escapeHTML(v.nome||mesaId)}</h3>
+      <div class="meta">personagem: <b>${escapeHTML(v.pid||'')}</b></div>
+      <div class="codebadge">${escapeHTML(mesaId)} <button onclick="copyToClipboard('${escapeHTML(mesaId)}',this)">copiar</button></div>
+      <div class="actions">
+        <button class="primary" onclick="location.href='DCC-Dashboard-Equipamento.html?mesa=${encodeURIComponent(mesaId)}&pid=${encodeURIComponent(v.pid||'')}'">Abrir minha ficha</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderMasterGrid(list){
+  const el = document.getElementById('masterGrid');
+  if(!list.length){ el.innerHTML='<div class="empty">Você ainda não criou nenhuma mesa. Use o formulário abaixo para criar a primeira.</div>'; return; }
+  el.innerHTML = list.map(([mesaId,v])=>`
+    <div class="card" id="mcard-${escapeHTML(mesaId)}">
+      <h3>${escapeHTML(v.nome||mesaId)}</h3>
+      <div class="meta">jogadores: <span id="count-${escapeHTML(mesaId)}">…</span></div>
+      <div class="codebadge">${escapeHTML(mesaId)} <button onclick="copyToClipboard('${escapeHTML(mesaId)}',this)">copiar</button></div>
+      <div class="actions">
+        <button class="primary" onclick="location.href='DCC-Painel-Mestre.html?mesa=${encodeURIComponent(mesaId)}'">Abrir Painel do Mestre</button>
+      </div>
+    </div>`).join('');
+  list.forEach(([mesaId])=>{
+    db.ref('mesasInfo/'+mesaId+'/membros').once('value').then(s=>{
+      const n = s.exists() ? Object.keys(s.val()).length : 0;
+      const c = document.getElementById('count-'+mesaId);
+      if(c) c.textContent = n + (n===1?' jogador':' jogadores');
+    });
+  });
+}
+
+// ---------- Criar mesa ----------
+async function createMesa(){
+  clearMsg('createMsg');
+  const nome = document.getElementById('newMesaNome').value.trim();
+  const codigoCustom = sanitizeCode(document.getElementById('newMesaCodigo').value);
+  if(!nome){ showMsg('createMsg','Digite um nome para a mesa.'); return; }
+
+  let mesaId;
+  if(codigoCustom){
+    const snap = await db.ref('mesasInfo/'+codigoCustom).once('value');
+    if(snap.exists()){ showMsg('createMsg','Esse código já está em uso por outra mesa. Escolha outro.'); return; }
+    mesaId = codigoCustom;
+  } else {
+    let tentativas=0, existe=true;
+    do{
+      mesaId = slugify(nome) + '-' + rand4();
+      const snap = await db.ref('mesasInfo/'+mesaId).once('value');
+      existe = snap.exists();
+      tentativas++;
+    } while(existe && tentativas<5);
+    if(existe){ showMsg('createMsg','Não consegui gerar um código único, tente de novo.'); return; }
+  }
+
+  try{
+    await db.ref('mesasInfo/'+mesaId).set({
+      nome, mestreUid: CURRENT_UID, mestreNome: CURRENT_NAME,
+      criadaEm: firebase.database.ServerValue.TIMESTAMP, sistema:'Dungeon Crawler Carl RPG'
+    });
+    await db.ref('usuarios/'+CURRENT_UID+'/mesas/'+mesaId).set({papel:'mestre', nome});
+    document.getElementById('newMesaNome').value='';
+    document.getElementById('newMesaCodigo').value='';
+    showMsg('createMsg','Mesa criada! Código: '+mesaId+' — copie o card abaixo e envie aos jogadores.', 'ok');
+  }catch(err){
+    showMsg('createMsg','Erro ao criar mesa: '+err.message);
+  }
+}
+
+// ---------- Entrar em mesa ----------
+async function joinMesa(){
+  clearMsg('joinMsg');
+  const codeRaw = document.getElementById('joinCode').value;
+  const nomeRaw = document.getElementById('joinPid').value.trim();
+  const mesaId = sanitizeCode(codeRaw);
+  const pid = sanitizeCode(nomeRaw);
+  if(!mesaId){ showMsg('joinMsg','Digite o código da mesa.'); return; }
+  if(!pid){ showMsg('joinMsg','Digite o nome do seu personagem.'); return; }
+  try{
+    const snap = await db.ref('mesasInfo/'+mesaId).once('value');
+    if(!snap.exists()){ showMsg('joinMsg','Código não encontrado. Confira com o Mestre.'); return; }
+    const info = snap.val();
+    await db.ref('mesasInfo/'+mesaId+'/membros/'+CURRENT_UID).set({
+      pid, nomeJogador: nomeRaw, entrouEm: firebase.database.ServerValue.TIMESTAMP
+    });
+    await db.ref('usuarios/'+CURRENT_UID+'/mesas/'+mesaId).set({papel:'jogador', nome: info.nome||mesaId, pid});
+    document.getElementById('joinCode').value=''; document.getElementById('joinPid').value='';
+    showMsg('joinMsg','Você entrou na mesa "'+(info.nome||mesaId)+'"! Ela já aparece acima.', 'ok');
+  }catch(err){
+    showMsg('joinMsg','Erro ao entrar na mesa: '+err.message);
+  }
+}
+</script>
+</body>
+</html>

@@ -157,6 +157,7 @@
   <header>
     <div><h1>👁 PAINEL DO MESTRE</h1><small>Dungeon Crawler Carl — fichas dos crawlers ao vivo</small></div>
     <div style="display:flex;gap:8px">
+      <button class="sm" onclick="location.href='DCC-Portal.html'" title="Voltar para o portal de mesas">← Portal</button>
       <button class="sm" onclick="exportBackup()" title="Baixar um snapshot de todas as fichas para guardar no projeto">⬇ Backup das fichas</button>
       <button class="sm" onclick="toggleCfg()">⚙ Configurar Firebase</button>
     </div>
@@ -353,6 +354,10 @@ function skillsHTML(sks){
 const SLOTLABEL={maoE:'Mão Esq.',maoD:'Mão Dir.',cabeca:'Cabeça',camiseta:'Camiseta',armadura:'Armadura',roupabaixo:'R. Baixo',calca:'Calça',calcado:'Calçado',acc1:'Acess. 1',acc2:'Acess. 2',acc3:'Acess. 3',acc4:'Acess. 4',acc5:'Acess. 5'};
 const SLOTORDER=['maoE','maoD','cabeca','camiseta','armadura','roupabaixo','calca','calcado','acc1','acc2','acc3','acc4','acc5'];
 const FBKEY='dcc_fb_cfg', ROOMKEY='dcc_mestre_room';
+// Mesmo projeto Firebase do Dashboard/Portal — usado como padrão se nada estiver salvo.
+const DEFAULT_FB_CFG={apiKey:"AIzaSyCWfU58HVTvLK4ej5yDH06mr2CQtxsde-8",authDomain:"dungeonearth.firebaseapp.com",databaseURL:"https://dungeonearth-default-rtdb.firebaseio.com",projectId:"dungeonearth",storageBucket:"dungeonearth.firebasestorage.app",messagingSenderId:"528605528507",appId:"1:528605528507:web:8bf62f719a9e773607449e",measurementId:"G-6C91MQ4W56"};
+const URLP_M=new URLSearchParams(location.search);
+const URL_MESA_M=(URLP_M.get('mesa')||'').trim();
 let fbApp=null, fbDb=null, currentRef=null, gmRef=null;
 let gmState={nivel:1,xp:0,xpAlvo:300,colapso:0,andar:1};
 const COL_PIPS=6;
@@ -960,6 +965,8 @@ function init(){
   renderMonsters();
   renderAchBoard();
   loadCats();
+  if(!localStorage.getItem(FBKEY)) localStorage.setItem(FBKEY,JSON.stringify(DEFAULT_FB_CFG));
+  if(URL_MESA_M) localStorage.setItem(ROOMKEY,URL_MESA_M);
   const room=localStorage.getItem(ROOMKEY); if(room)document.getElementById('roomCode').value=room;
   if(room&&localStorage.getItem(FBKEY))connectCloud();
 }
