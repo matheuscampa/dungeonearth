@@ -29,7 +29,7 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
 ## 🔜 Próximo passo imediato
 
 - [x] **Firebase + GitHub Pages no ar** — projeto criado, dashboard hospedado e Pages ativo. Falta só testar a conexão ao vivo com os jogadores na Sessão 1.
-- [x] **Portal de gestão com login (email/senha)** — `DCC-Portal-Login.html` + `DCC-Portal.html`: menu Jogador (lista de mesas + ficha) e menu Mestre (criar mesa, gerar/copiar código). Reaproveita o projeto Firebase existente (Auth + Realtime Database). Guia completo em `COMO-ATIVAR-LOGIN.md`.
+- [x] **Portal de gestão com login (email/senha)** — `index.html` (URL única de entrada) + `DCC-Portal.html`: menu Jogador (lista de mesas + ficha) e menu Mestre (criar mesa, gerar/copiar código). `DCC-Portal-Login.html` virou redirect de compatibilidade. Reaproveita o projeto Firebase existente (Auth + Realtime Database). Guia completo em `COMO-ATIVAR-LOGIN.md`.
   - [ ] **Pendente de você:** ativar Email/Password no Firebase Console (Passo 1 do guia) — sem isso o login não funciona.
   - [ ] **Pendente de você:** migrar a mesa `dungeon-crawler-world` pelo portal (Passo 3 do guia) e avisar os 5 jogadores pra criarem conta.
   - [ ] **P2 — Apertar regras do Realtime Database** para exigir login (Passo 2 do guia, opcional mas recomendado).

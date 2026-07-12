@@ -6,11 +6,12 @@ Agora existe um **portal com login por email e senha**, em vez de cada um só di
 
 | Arquivo | Pra quê |
 |---|---|
-| `DCC-Portal-Login.html` | Tela de entrar / criar conta |
+| **`index.html`** | **A URL única que você manda pra todo mundo.** Tela de entrar / criar conta — é a página inicial do site (a raiz), então o link fica só o domínio, sem nome de arquivo. |
+| `DCC-Portal-Login.html` | Mantido só por compatibilidade com links antigos — redireciona sozinho pra `index.html`. Não precisa mais divulgar esse. |
 | `DCC-Portal.html` | Home depois de logar: lista suas mesas como **Jogador** (com link pra ficha) e suas mesas como **Mestre** (criar mesa, gerar/copiar código) |
 | (já existiam) `DCC-Dashboard-Equipamento.html` e `DCC-Painel-Mestre.html` | Ganharam um botão **← Portal** e agora **também exigem login** — se abrir sem estar logado (nesse navegador), redirecionam pra tela de entrar |
 
-> **Importante:** se você aplicou o Passo 2 (regras exigindo login), o Dashboard e o Painel do Mestre só conseguem ler/escrever a mesa se a pessoa estiver **logada no mesmo navegador**. Por isso ambos agora checam a sessão automaticamente antes de conectar — se você entrar direto pelo link antigo sem ter logado antes, eles mandam pra `DCC-Portal-Login.html`. Depois de logar uma vez, o navegador lembra e não pede de novo.
+> **Importante:** se você aplicou o Passo 2 (regras exigindo login), o Dashboard e o Painel do Mestre só conseguem ler/escrever a mesa se a pessoa estiver **logada no mesmo navegador**. Por isso ambos agora checam a sessão automaticamente antes de conectar — se você abrir sem ter logado antes, eles mandam pra `index.html`. Depois de logar uma vez, o navegador lembra e não pede de novo.
 
 O login usa o **mesmo projeto Firebase** que já estava configurado (`dungeonearth`), então não precisa criar nada novo na nuvem — só **ligar uma chave** no Console.
 
@@ -22,7 +23,7 @@ O login usa o **mesmo projeto Firebase** que já estava configurado (`dungeonear
 2. Menu lateral → **Build → Authentication**.
 3. Aba **Sign-in method** → clique em **Email/Password** → **Enable** (ativar) → **Save**.
 
-Pronto. Sem isso, os botões de entrar/criar conta do `DCC-Portal-Login.html` vão dar erro.
+Pronto. Sem isso, os botões de entrar/criar conta do `index.html` vão dar erro.
 
 ---
 
@@ -68,7 +69,7 @@ O que isso garante: só quem tem conta acessa qualquer coisa; cada um só edita 
 
 Sua mesa já em andamento — com as fichas dos 5 jogadores salvas em `mesas/dungeon-crawler-world/jogadores/...` — precisa ganhar um "registro" no novo sistema pra aparecer no portal. Isso é feito **pelo próprio portal**, sem mexer no Firebase Console:
 
-1. Abra `DCC-Portal-Login.html` e **crie sua conta de Mestre** (email + senha).
+1. Abra `index.html` e **crie sua conta de Mestre** (email + senha).
 2. Você cai no `DCC-Portal.html`. Na seção **🛡 Mesas que eu mestro**, preencha:
    - **Nome da mesa:** `Dungeon Crawler World` (ou o nome que preferir mostrar)
    - **Código customizado:** `dungeon-crawler-world` ← **exatamente esse**, pra apontar pro mesmo lugar onde as fichas já estão salvas
@@ -77,7 +78,7 @@ Sua mesa já em andamento — com as fichas dos 5 jogadores salvas em `mesas/dun
 
 ### Cada um dos 5 jogadores
 
-1. Cria a própria conta em `DCC-Portal-Login.html`.
+1. Cria a própria conta em `index.html` (é só o link do site, sem precisar de nome de arquivo).
 2. No portal, usa **"Entrar em uma mesa com código"**:
    - **Código da mesa:** `dungeon-crawler-world`
    - **Nome do personagem:** **o mesmo nome que já vinha usando** no link antigo (`?pid=SEU-NOME`) — isso é importante, é o que identifica a ficha dele na nuvem. Se digitar um nome diferente, o sistema vai achar que é um personagem novo (ficha vazia).
@@ -90,15 +91,15 @@ Sua mesa já em andamento — com as fichas dos 5 jogadores salvas em `mesas/dun
 ## Fluxo novo, resumido
 
 ```
-DCC-Portal-Login.html  →  (cria conta ou entra)  →  DCC-Portal.html
-                                                        ├── 🎮 Jogador: lista mesas + "Entrar em mesa com código"
-                                                        └── 🛡 Mestre: lista mesas + "Criar nova mesa"
-                                                                 ↓ abre
-                                        DCC-Dashboard-Equipamento.html (ficha)
-                                        DCC-Painel-Mestre.html (painel ao vivo)
+index.html  →  (cria conta ou entra)  →  DCC-Portal.html
+                                            ├── 🎮 Jogador: lista mesas + "Entrar em mesa com código"
+                                            └── 🛡 Mestre: lista mesas + "Criar nova mesa"
+                                                     ↓ abre
+                            DCC-Dashboard-Equipamento.html (ficha)
+                            DCC-Painel-Mestre.html (painel ao vivo)
 ```
 
-Depois de migrada, distribua só **um link** pros jogadores: `DCC-Portal-Login.html`. Eles criam a conta, colam o código da mesa (`dungeon-crawler-world`) uma vez, e depois disso o portal já lembra de tudo — não precisam mais do link cheio de parâmetros.
+Depois de migrada, distribua só **um link** pros jogadores: o link raiz do site (ex: `https://matheuscampa.github.io/dungeonearth/`), que abre direto o `index.html`. Eles criam a conta, colam o código da mesa (`dungeon-crawler-world`) uma vez, e depois disso o portal já lembra de tudo — não precisam mais do link cheio de parâmetros.
 
 ## Segurança — o que muda
 

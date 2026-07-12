@@ -1,6 +1,6 @@
 # 🎮 Kit do Jogador — Dungeon Crawler Carl (mesa online)
 
-> **Novidade:** agora dá pra entrar por um **Portal com login** (email + senha) em vez de decorar link. Abra `DCC-Portal-Login.html`, crie sua conta e use **"Entrar em uma mesa com código"** com o código `dungeon-crawler-world` e o **mesmo nome de personagem** que você já usa. Depois disso o portal lembra de tudo — veja `COMO-ATIVAR-LOGIN.md` pra detalhes. O jeito antigo (link direto abaixo) continua funcionando normalmente.
+> **Novidade:** agora dá pra entrar por um **Portal com login** (email + senha) em vez de decorar link. Abra o **link do site** (a página inicial — `index.html`), crie sua conta e use **"Entrar em uma mesa com código"** com o código `dungeon-crawler-world` e o **mesmo nome de personagem** que você já usa. Depois disso o portal lembra de tudo — veja `COMO-ATIVAR-LOGIN.md` pra detalhes. O jeito antigo (link direto abaixo) continua funcionando normalmente.
 
 Você vai receber do Mestre um **link pessoal**. Abrir esse link já faz quase tudo sozinho: conecta na mesa, carrega os catálogos de itens e skills e abre a **sua** ficha. Você só monta o personagem. Use no **computador**, com Chrome, Edge ou Firefox.
 

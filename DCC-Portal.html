@@ -127,11 +127,11 @@ function copyToClipboard(text, btn){
   }).catch(()=>{ prompt('Copie o código:', text); });
 }
 
-function doLogout(){ auth.signOut().then(()=>location.href='DCC-Portal-Login.html'); }
+function doLogout(){ auth.signOut().then(()=>location.href='index.html'); }
 
 // ---------- Autenticação ----------
 auth.onAuthStateChanged(user=>{
-  if(!user){ location.href='DCC-Portal-Login.html'; return; }
+  if(!user){ location.href='index.html'; return; }
   CURRENT_UID = user.uid;
   CURRENT_NAME = user.displayName || (user.email||'').split('@')[0];
   document.getElementById('whoName').innerHTML = 'Logado como <b>'+escapeHTML(CURRENT_NAME)+'</b> · '+escapeHTML(user.email||'');
