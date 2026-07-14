@@ -551,12 +551,18 @@
     <div class="subt" id="modalSub"></div>
     <div class="seg">
       <button id="tabCat" class="on" onclick="setTab('cat')">📦 Do catálogo</button>
+      <button id="tabInv" onclick="setTab('inv')">🎒 Do inventário</button>
       <button id="tabCustom" onclick="setTab('custom')">✏ Carta personalizada</button>
     </div>
 
     <!-- ABA CATÁLOGO -->
     <div id="paneCat">
       <div class="picker-list" id="pickerList"></div>
+    </div>
+
+    <!-- ABA INVENTÁRIO -->
+    <div id="paneInv" style="display:none">
+      <div class="picker-list" id="invPickerList"></div>
     </div>
 
     <!-- ABA EDITOR -->
@@ -1208,26 +1214,56 @@ function openModal(slotId){
   const s=SLOTS.find(x=>x.id===slotId);
   document.getElementById('modalTitle').textContent='Slot · '+s.nome;
   document.getElementById('modalSub').textContent = state.cards[slotId]
-    ? 'Já equipado. Escolha outra carta para trocar (a atual volta ao inventário).' : 'Escolha uma carta do catálogo ou crie uma personalizada.';
+    ? 'Já equipado. Escolha outra carta para trocar (a atual volta ao inventário).' : 'Escolha uma carta do catálogo, do seu inventário, ou crie uma personalizada.';
   document.getElementById('m_delete').style.display = state.cards[slotId]?'block':'none';
-  setTab('cat'); document.getElementById('overlay').classList.add('show');
+  document.getElementById('tabInv').style.display='inline-block';
+  const hasInv = state.inventory.some(it=>it.cat===s.cat);
+  setTab(hasInv?'inv':'cat'); document.getElementById('overlay').classList.add('show');
 }
 function openAddItem(){
   modalMode='inv'; editing=null;
   document.getElementById('modalTitle').textContent='Adicionar ao inventário';
   document.getElementById('modalSub').textContent='Escolha do catálogo ou crie uma carta. Vai direto para o inventário.';
   document.getElementById('m_delete').style.display='none';
+  document.getElementById('tabInv').style.display='none';
   setTab('cat'); document.getElementById('overlay').classList.add('show');
 }
 function setTab(t){
   tab=t;
   document.getElementById('tabCat').classList.toggle('on',t==='cat');
+  document.getElementById('tabInv').classList.toggle('on',t==='inv');
   document.getElementById('tabCustom').classList.toggle('on',t==='custom');
   document.getElementById('paneCat').style.display = t==='cat'?'block':'none';
+  document.getElementById('paneInv').style.display = t==='inv'?'block':'none';
   document.getElementById('paneCustom').style.display = t==='custom'?'block':'none';
   document.getElementById('m_save').style.display = t==='custom'?'block':'none';
   if(t==='cat') renderPicker();
+  if(t==='inv') renderInvPicker();
   if(t==='custom') fillEditor();
+}
+function renderInvPicker(){
+  const list=document.getElementById('invPickerList');
+  const s=SLOTS.find(x=>x.id===editing);
+  if(!s){list.innerHTML='<div class="pk-empty">Abra pelo clique num slot de equipamento pra ver o inventário compatível.</div>';return;}
+  const items=state.inventory.filter(it=>it.cat===s.cat);
+  if(!items.length){list.innerHTML='<div class="pk-empty">Nenhum item deste tipo no seu inventário ainda.<br>Use a aba "Do catálogo" ou "Carta personalizada".</div>';return;}
+  list.innerHTML=items.map(it=>{
+    const r=RAR[it.rar]||RAR.comum; const q=it.qty||1;
+    const fx=it.fx?`<div class="pf">${escapeHTML(it.fx)}</div>`:'';
+    const u=JSON.stringify(it.uid);
+    return `<div class="pk" style="border-color:${r.cor}" onclick='equipFromInventorySlot(${u})'>
+      <div class="pn">${escapeHTML(it.name||'(sem nome)')}${q>1?' <span style="color:var(--accent2)">×'+q+'</span>':''}</div>
+      <div class="pt">${escapeHTML(it.type||'')} · ${r.nome}</div>
+      <div class="ps">${cardStatsHTML(it)}</div>${fx}</div>`;
+  }).join('');
+}
+function equipFromInventorySlot(u){
+  const idx=state.inventory.findIndex(x=>x.uid===u); if(idx<0)return;
+  const it=state.inventory[idx];
+  const card=Object.assign({},it); delete card.uid; delete card.cat; delete card.qty;
+  if((it.qty||1)>1){it.qty=it.qty-1;}else{state.inventory.splice(idx,1);}
+  equipCard(card,editing); // já faz persist + render
+  closeModal();
 }
 function renderPicker(){
   const list=document.getElementById('pickerList');

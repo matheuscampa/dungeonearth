@@ -35,7 +35,7 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
   - [x] Migrar a mesa `dungeon-crawler-world` pelo portal (Passo 3 do guia) — mesa recriada com código customizado, fichas dos jogadores preservadas. Feito.
   - [ ] **Pendente de você:** avisar os 5 jogadores pra criarem conta em `index.html` e entrarem na mesa com o código `dungeon-crawler-world` (mesmo nome de personagem de antes).
 - [x] **Correção: `permission_denied` no Painel do Mestre/Dashboard** — as regras apertadas exigiam login, mas essas duas páginas nunca autenticavam no Firebase. Agora carregam o SDK de Auth e só conectam na mesa depois de confirmar a sessão logada (senão redirecionam pro login). Feito.
-- [x] **Correção: redirect prematuro de volta pro login** — o gate de auth do Painel/Dashboard disparava o redirect assim que via `user=null` (estado transitório enquanto a sessão salva ainda carrega), e não cancelava esse redirect se o login real chegasse logo em seguida — derrubava a página no meio do carregamento das fichas. Corrigido: agora cancela o redirect pendente assim que o usuário é confirmado. Feito.
+- [x] **Correção: redirect prematuro de volta pro login** — o gate de auth do Painel/Dashboard disparava o redirect assim que via `user=null` (estado transitório enquanto a sessão salva ainda carrega), e não cancelava esse redirect se o login real chegasse logo em seguida. Corrigido no código (cancela o redirect pendente quando o usuário é confirmado). No caso relatado, a causa raiz era armazenamento (localStorage/indexedDB) corrompido/antigo no navegador — resolvido limpando cache e cookies do site. Dica de diagnóstico registrada em `COMO-ATIVAR-LOGIN.md` → Solução de problemas.
 - [x] **URL única de entrada** — `index.html` é a página raiz do site (login/cadastro); depois de logar vai direto pro Portal. `DCC-Portal-Login.html` ficou como redirect de compatibilidade pra quem tinha o link antigo salvo. Feito.
   - [ ] **Pendente de você:** dar commit + push dessas mudanças pro repositório do GitHub Pages pra valerem no site ao vivo (se ainda não fez).
 
@@ -49,6 +49,9 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
 - [x] **Combate avançado + novas condições** — §6A + Derrubado/Medo/Imobilizado/Provocado/Oculto. Feito.
 - [x] **Exaustão.** Formalizada como condição graduada 0-5 (acumula sem Descanso Diário / farm longo). No Sistema §14.1. Feito.
 - [ ] **P1 — Crafting (forja/receitas).** Sistema para transformar materiais monstruosos (ex.: partes de chefe) em itens. Definir: fonte de materiais, bancada na Sala Segura, receitas, custo. *(Falar depois — por ora, batalhas épicas entregam itens prontos, sem craft.)*
+- [x] **Regeneração de HP/PM fora de combate agora é instantânea.** Fora de combate, HP/PM enchem na hora (sem contar turnos); em combate continua nível/turno. Exceção: Exaustão N2+ derruba a regeneração fora de combate de volta pro modo gradual (½ nível/turno). Atualizado no Sistema §3.4.1, §14.1 e na folha de referência. Feito.
+  - [x] **Itens/skills que dependiam do regen antigo foram redesenhados** (v10 dos catálogos): *Ração de Crawler* (agora remove 1 Exaustão, 1×/dia) · *Incenso Calmante* (remove Medo) · *Peitoral Rúnico* (10 HP Temporário no início do combate) · *Cajado do Pântano Sábio* (recupera 1 PM ao causar dano) · *Meia-calça do Vazio Aconchegante* (1ª spell do combate custa −2 PM) · skills *Primeiros Socorros* (agora estabiliza Caídos) e *Recuperação Veloz* (agora foca em cooldown/Exaustão em vez de HP/PM). Feito.
+  - [ ] **Pendente:** regenerar `DCC-Lista-Itens.pdf` e `DCC-Lista-Skills.pdf` a partir da v10 dos catálogos (o texto desses 7 itens/skills mudou).
 
 ### Conteúdo
 - [ ] **P1 — Loja da Sala Segura.** Lista de preços em ouro: consumíveis, consertos, upgrade de Cama, e itens fixos do Bopca. Definir custo do **upgrade de Cama**. *(Adiado a pedido — só o Guia/atmosfera por enquanto.)*
@@ -59,6 +62,7 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
 - [ ] **P2 — Mais conquistas** por andar/feito (deck cresce com a campanha).
 
 ### Dashboard / fichas digitais
+- [x] **Aba "Do inventário" ao equipar.** Ao clicar num slot de equipamento, o modal agora tem 3 abas: Catálogo, **Inventário** (só os itens já coletados que cabem naquele slot) e Carta personalizada. Se o jogador já tem algo compatível no inventário, essa aba abre selecionada por padrão. Feito no `DCC-Dashboard-Equipamento.html`.
 - [ ] **P1 — Barras de vida (jogadores e monstros) no dashboard do jogador.** Exibir no dashboard do jogador uma **barra de HP de cada crawler da mesa** (puxando os HP atual/máx já publicados no Firebase) e uma **área de HP dos monstros do combate atual** (controlada/sincronizada pelo Mestre — provável novo nó `mesas/{sala}/combate`). Definir: quem edita o HP dos monstros (Mestre adiciona/dá dano), atualização ao vivo, e visual compacto (barra + número, cor por % de vida).
 - [ ] **P1 — Banco de pontos de atributo não usados.** Campo na ficha (dashboard + ficha impressa) para guardar **pontos de atributo ganhos mas ainda não distribuídos** — o jogador acumula ao subir de nível / por recompensas e gasta quando quiser. Definir: quantos pontos por nível, se há trava por andar, e refletir o saldo no Painel do Mestre.
 - [ ] **P1 — Troca de itens entre jogadores da mesa.** Permitir transferir cartas/itens (e talvez ouro) de uma ficha para outra via Firebase, sem copiar/colar manual. Definir: fluxo de oferta→aceite, alcance (precisa estar na mesma cena/Sala Segura?), e o que pode ou não ser trocado.
@@ -86,6 +90,6 @@ Legenda de prioridade: **P0** = trava a Sessão 1 · **P1** = importante para ca
 ---
 
 ## Notas de manutenção
-- Versões atuais: **Itens v6 (175; com tipo de dano)** · **Skills v9 (223; 32 spells de dano)** · **Sistema v1.5 (§6A Combate avançado · PA placar único · Exaustão §14.1 · XP/Audiência · Farm §14.4)**. Módulo Andar 1 = **caverna clássica** + 2 Batalhas Épicas de farm + falas do Guia na Sala Segura.
+- Versões atuais: **Itens v10 (275; com tipo de dano)** · **Skills v10 (223; 32 spells de dano)** · **Sistema v1.6 (§6A Combate avançado · PA placar único · Exaustão §14.1 · XP/Audiência · Farm §14.4 · §3.4.1 regen fora de combate instantâneo)**. Módulo Andar 1 = **caverna clássica** + 2 Batalhas Épicas de farm + falas do Guia na Sala Segura.
 - Ao mudar catálogos, regerar: `DCC-Lista-Itens.pdf`, `DCC-Lista-Skills.pdf`, `DCC-Tabela-Loot.pdf` (pool é dinâmico).
 - Jogadores recarregam os links dos catálogos para puxar versões novas.

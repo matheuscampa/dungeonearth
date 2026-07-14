@@ -1,8 +1,8 @@
 {
   "catalogo": "Dungeon Crawler Carl — Baralho de Loot",
-  "versao": 9,
-  "atualizadoEm": "2026-06-28",
-  "notas": "Faixas de dano = Baixa/Média/Alta. Itens com dano trazem dtype (tipo de dano: Físico/Fogo/Gelo/Raio/Ácido/Arcano/Radiante/Explosivo) para as regras de Resistência (Sistema §6A). Consumíveis usam slot 'consumivel'. Gear de luta desarmada usa ubd/ubp (bônus no ataque Desarmado). | v7: campo \"cost\" (preço em ouro p/ Mercado do Bopca) em todos os itens. Fórmula: base por raridade × (1 + 0.04·d3 + 0.12·def + 0.18·prec), consumível ×0.6, arredondado. | v8: +100 itens novos e criativos (foco em varinhas e cajados). Novo campo \"ab\" = bônus de atributo (FOR/DEX/CON/INT/CHA) aplicado quando o item está EQUIPADO; entra em HP, Mana, Defesa, Iniciativa e dano dos ataques. Consumíveis usam efeitos temporários no fx (não usam \"ab\"). | v9: efeitos sempre-ativos estruturados a partir do texto — pmb (PM máx), hpb (HP máx), inib (Iniciativa), spm (desconto de PM em spells). Aplicados automaticamente quando o item está equipado.",
+  "versao": 10,
+  "atualizadoEm": "2026-07-12",
+  "notas": "Faixas de dano = Baixa/Média/Alta. Itens com dano trazem dtype (tipo de dano: Físico/Fogo/Gelo/Raio/Ácido/Arcano/Radiante/Explosivo) para as regras de Resistência (Sistema §6A). Consumíveis usam slot 'consumivel'. Gear de luta desarmada usa ubd/ubp (bônus no ataque Desarmado). | v7: campo \"cost\" (preço em ouro p/ Mercado do Bopca) em todos os itens. Fórmula: base por raridade × (1 + 0.04·d3 + 0.12·def + 0.18·prec), consumível ×0.6, arredondado. | v8: +100 itens novos e criativos (foco em varinhas e cajados). Novo campo \"ab\" = bônus de atributo (FOR/DEX/CON/INT/CHA) aplicado quando o item está EQUIPADO; entra em HP, Mana, Defesa, Iniciativa e dano dos ataques. Consumíveis usam efeitos temporários no fx (não usam \"ab\"). | v9: efeitos sempre-ativos estruturados a partir do texto — pmb (PM máx), hpb (HP máx), inib (Iniciativa), spm (desconto de PM em spells). Aplicados automaticamente quando o item está equipado. | v10: regeneração fora de combate agora é instantânea (Sistema §3.4.1) — itens que dependiam de regen por turno/fora de combate tiveram o efeito redesenhado: Ração de Crawler, Incenso Calmante, Peitoral Rúnico, Cajado do Pântano Sábio, Meia-calça do Vazio Aconchegante.",
   "itens": [
     {
       "id": "wm-faca",
@@ -1948,7 +1948,7 @@
       "prec": 0,
       "def": 0,
       "twoHand": false,
-      "fx": "Fora de combate: recupera 25 HP e 10 PM.",
+      "fx": "Use, fora de combate: remove 1 nível de Exaustão. (1×/dia)",
       "cost": 5
     },
     {
@@ -2512,7 +2512,7 @@
       "prec": 0,
       "def": 4,
       "twoHand": false,
-      "fx": "Regenera 3 HP por turno fora de combate.",
+      "fx": "No início do combate, ganha 10 de HP Temporário.",
       "cost": 275
     },
     {
@@ -2705,7 +2705,7 @@
       "prec": 0,
       "def": 0,
       "twoHand": false,
-      "fx": "Fora de combate: recupera 15 PM.",
+      "fx": "Use: remove a condição Medo.",
       "cost": 5
     },
     {
@@ -3286,7 +3286,7 @@
       "twoHand": true,
       "ubd": 0,
       "ubp": 0,
-      "fx": "Enquanto equipado: regenera 1 PM por turno.",
+      "fx": "Ao causar dano com esta arma, recupera 1 PM (até 1×/turno).",
       "cost": 175,
       "ab": {
         "INT": 3,
@@ -4912,7 +4912,7 @@
       "twoHand": false,
       "ubd": 0,
       "ubp": 0,
-      "fx": "Mana máxima +4. Regenera 1 PM por turno.",
+      "fx": "Mana máxima +4. A primeira spell conjurada em cada combate custa −2 PM (mín. 0).",
       "cost": 325,
       "ab": {
         "INT": 3,
