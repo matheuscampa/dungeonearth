@@ -713,10 +713,6 @@ const URL_PID=(URLP.get('pid')||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,
 let playerId;
 if(URL_PID){ playerId='pid-'+URL_PID; localStorage.setItem(PIDKEY,playerId); }
 else { playerId=localStorage.getItem(PIDKEY); if(!playerId){playerId='p_'+Math.random().toString(36).slice(2,9);localStorage.setItem(PIDKEY,playerId);} }
-// "Dono" deste navegador = o primeiro jogador que o usou. Se abrir o link de OUTRO jogador, avisamos (sem bloquear).
-let DEVICE_OWNER=localStorage.getItem('dcc_device_owner');
-if(!DEVICE_OWNER && URL_PID){ DEVICE_OWNER=playerId; localStorage.setItem('dcc_device_owner',DEVICE_OWNER); }
-const FOREIGN_SHEET = !!(URL_PID && DEVICE_OWNER && DEVICE_OWNER!==playerId);
 // A ficha é salva SEPARADA por jogador (pid): abrir o link de outro jogador NUNCA mistura nem sobrescreve fichas.
 const KEY='dcc_dashboard_v2__'+playerId, CATKEY='dcc_catalog_v2', URLKEY='dcc_catalog_url';
 const SKILLCATKEY='dcc_skillcat_v1', SKILLURLKEY='dcc_skillcat_url';
@@ -747,6 +743,9 @@ let fbApp=null, fbDb=null;
 // Inicializa o app + autenticação já no carregamento, ANTES de conectar na mesa,
 // pois as regras do banco agora exigem estar logado (auth !== null).
 console.log('[DCC] Dashboard carregando…', new Date().toISOString());
+window.addEventListener('error', function(ev){
+  console.error('[DCC] Erro não tratado:', ev.error ? (ev.error.stack||ev.error.message) : ev.message);
+});
 if(!localStorage.getItem(FBKEY)) localStorage.setItem(FBKEY, JSON.stringify(DEFAULT_FB_CFG));
 try{
   fbApp = firebase.initializeApp(JSON.parse(localStorage.getItem(FBKEY)));
@@ -829,9 +828,18 @@ function pullCloud(){ // botão "Puxar ficha" — recuperação manual
 function pushCloud(){
   if(!fbDb)return;
   const room=localStorage.getItem(ROOMKEY); if(!room)return;
-  fbDb.ref('mesas/'+room+'/jogadores/'+playerId).set({
-    name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,attrEff:{FOR:effAttr('FOR'),DEX:effAttr('DEX'),CON:effAttr('CON'),INT:effAttr('INT'),CHA:effAttr('CHA')},cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),hpCur:state.hpCur!=null?state.hpCur:hpMaxVal(),hpMax:hpMaxVal(),pa:state.pa||0,xp:state.xp||0,companions:state.companions||[],apAvail:apComputed(),achievements:state.achievements||{},bopcaDisc:state.bopcaDisc||0,updatedAt:state.updatedAt||Date.now()
-  });
+  const ref=fbDb.ref('mesas/'+room+'/jogadores/'+playerId);
+  function doSet(achToSave){
+    ref.set({
+      name:state.name||'(sem nome)',level:state.level||1,attr:state.attr,attrEff:{FOR:effAttr('FOR'),DEX:effAttr('DEX'),CON:effAttr('CON'),INT:effAttr('INT'),CHA:effAttr('CHA')},cards:state.cards||{},inventory:state.inventory||[],gold:state.gold||0,boxes:state.boxes||{},skills:state.skills||[],psTotal:state.psTotal||0,pmCur:state.pmCur||0,pmMax:manaMax(),hpCur:state.hpCur!=null?state.hpCur:hpMaxVal(),hpMax:hpMaxVal(),pa:state.pa||0,xp:state.xp||0,companions:state.companions||[],apAvail:apComputed(),achievements:achToSave,bopcaDisc:state.bopcaDisc||0,updatedAt:state.updatedAt||Date.now()
+    });
+  }
+  // Funde as conquistas com o que já está salvo na nuvem antes de sobrescrever o nó inteiro do jogador —
+  // assim, uma sessão desatualizada (outra aba/dispositivo aberto com a ficha) nunca apaga conquistas
+  // marcadas em outro lugar só por salvar algo não relacionado (HP, ouro, etc.).
+  ref.child('achievements').once('value').then(snap=>{
+    doSet(Object.assign({},snap.val()||{},state.achievements||{}));
+  }).catch(()=>{ doSet(state.achievements||{}); });
 }
 function persistState(){state.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(state));pushCloud();}
 
@@ -1107,7 +1115,10 @@ function toggleAch(id){
   if(cur){ // desmarcar → reverter efeitos
     if(cur===true){ if(!confirm('"'+a.nome+'" foi marcada antes da automação (efeitos não registrados). Desmarcar mesmo assim?'))return; }
     else { if(!confirm('Desfazer "'+a.nome+'" e REVERTER os efeitos aplicados ('+achSummary(cur)+')?'))return; applyAchSnapshot(cur,-1); }
-    delete state.achievements[id]; persistState(); syncResourceInputs(); render(); toast('Conquista desmarcada: '+a.nome);
+    delete state.achievements[id];
+    // remoção direta e imediata na nuvem (além do save geral), pra não depender do merge de pushCloud() pra sumir de lá
+    if(fbDb){ const room=localStorage.getItem(ROOMKEY); if(room) fbDb.ref('mesas/'+room+'/jogadores/'+playerId+'/achievements/'+id).remove().catch(()=>{}); }
+    persistState(); syncResourceInputs(); render(); toast('Conquista desmarcada: '+a.nome);
     return;
   }
   const snap=parseAchRewards(a.rec);   // concede
@@ -1162,11 +1173,23 @@ function doSendItem(targetPid){
   const u=_sendUid; const it=state.inventory.find(x=>x.uid===u); if(!it){closeSend();return;}
   const room=localStorage.getItem(ROOMKEY); if(!room||!fbDb){closeSend();return;}
   const card={name:it.name||'',type:it.type||'',rar:it.rar||'comum',d1:it.d1||0,d2:it.d2||0,d3:it.d3||0,attr:it.attr||'',prec:it.prec||0,def:it.def||0,twoHand:!!it.twoHand,ubd:+it.ubd||0,ubp:+it.ubp||0,fx:it.fx||'',ab:it.ab||null,cost:+it.cost||0,hpb:+it.hpb||0,pmb:+it.pmb||0,inib:+it.inib||0,spm:+it.spm||0,pm:it.pm!=null?+it.pm:null,srcId:it.srcId||'',cat:it.cat||'consumivel',qty:1};
-  fbDb.ref('mesas/'+room+'/inbox/'+targetPid).push({item:card,from:state.name||'(sem nome)',ts:Date.now()})
-    .then(()=>{
-      if((it.qty||1)>1)it.qty=it.qty-1; else state.inventory=state.inventory.filter(x=>x.uid!==u);
-      persistState();render();toast('Enviado: '+(card.name||'item'));closeSend();
-    }).catch(e=>{alert('Falha ao enviar: '+e.message);});
+  function finalizeSend(msgSuffix){
+    if((it.qty||1)>1)it.qty=it.qty-1; else state.inventory=state.inventory.filter(x=>x.uid!==u);
+    persistState();render();toast('Enviado: '+(card.name||'item')+(msgSuffix||''));closeSend();
+  }
+  // push() sem valor já gera a chave na hora (sem round-trip); o set() é o que confirma a escrita.
+  const newRef=fbDb.ref('mesas/'+room+'/inbox/'+targetPid).push();
+  newRef.set({item:card,from:state.name||'(sem nome)',ts:Date.now()})
+    .then(()=>{ finalizeSend(); })
+    .catch(e=>{
+      console.error('[DCC] Erro ao confirmar envio do item, verificando se foi entregue mesmo assim:', e);
+      // Às vezes o Firebase já escreveu o dado (reconexão/retry) mesmo com a promise rejeitando.
+      // Confere antes de acusar falha pro jogador.
+      newRef.once('value').then(snap=>{
+        if(snap.exists()){ finalizeSend(' (demorou pra confirmar, mas chegou)'); }
+        else { alert('Falha ao enviar: '+e.message); }
+      }).catch(()=>{ alert('Falha ao enviar: '+e.message); });
+    });
 }
 let _inboxAttached=false;
 function attachInbox(){
@@ -1577,9 +1600,24 @@ function doOpenBox(){
   const premium=document.getElementById('boxPremium').checked;
   state.boxes[tier]=Math.max(0,(state.boxes[tier]||0)-1);
   const log=[];
-  resolveBox(tier,roll,premium,log,0);
-  persistState();render();
-  renderBoxResult(roll,log);
+  // Cada etapa é isolada: um erro em qualquer uma NUNCA deve deixar o jogador
+  // preso na tela de digitar o d100 — o resultado (ou um aviso do que deu errado) sempre aparece.
+  try{
+    resolveBox(tier,roll,premium,log,0);
+  }catch(e){
+    console.error('[DCC] Erro ao resolver a Caixa:', e);
+    log.push({kind:'erro',msg:'Erro ao sortear o loot: '+e.message+'. O que já tiver sido sorteado antes do erro foi salvo no inventário.'});
+  }
+  try{ persistState(); }catch(e){ console.error('[DCC] Erro ao salvar a ficha após abrir a Caixa:', e); }
+  try{ render(); }catch(e){ console.error('[DCC] Erro ao atualizar a tela após abrir a Caixa:', e); }
+  try{
+    renderBoxResult(roll,log);
+  }catch(e){
+    console.error('[DCC] Erro ao exibir o resultado da Caixa:', e);
+    document.getElementById('boxInputArea').style.display='none';
+    document.getElementById('boxGo').style.display='none';
+    document.getElementById('boxResult').innerHTML='<div class="lt" style="color:#ff8a8a">⚠ O loot foi sorteado e já está no seu inventário, mas houve um erro ao mostrar o resultado aqui (veja o Console — F12 — se quiser reportar). Feche e confira no inventário.</div>';
+  }
 }
 function renderBoxResult(roll,log){
   document.getElementById('boxInputArea').style.display='none';
@@ -1915,14 +1953,6 @@ async function init(){
   document.getElementById('pa').value=state.pa||0;
   document.getElementById('xp').value=state.xp||0;
   renderAttrs();
-  // aviso: este é o link de outro jogador neste navegador
-  if(FOREIGN_SHEET){
-    let b=document.getElementById('foreignWarn');
-    if(!b){b=document.createElement('div');b.id='foreignWarn';
-      b.style.cssText='position:sticky;top:0;z-index:9999;background:#5a1a1a;color:#ffd9d9;border-bottom:2px solid #ff5d5d;padding:8px 14px;font:600 13px system-ui;text-align:center';
-      document.body.prepend(b);}
-    b.innerHTML='⚠ Esta é a ficha de <b>'+escapeHTML(URL_PID)+'</b> — outro jogador. Você abriu o link dele neste navegador. <b>Não edite</b> aqui, ou vai alterar a ficha dele. Use o SEU próprio link.';
-  }
   // reconecta à mesa automaticamente, se já configurado (o ?mesa= da URL tem prioridade)
   if(URL_MESA)localStorage.setItem(ROOMKEY,URL_MESA);
   const savedRoom=localStorage.getItem(ROOMKEY);
